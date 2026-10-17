@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ink-50 text-ink-900 antialiased;
+  }
+  .dark body {
+    @apply bg-ink-950 text-ink-100;
+  }
+  /* iOS のセーフエリア（下部タブ用） */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px));
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* iOS のズーム防止 */
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-card border border-ink-100 bg-white shadow-card dark:border-ink-800 dark:bg-ink-900;
+  }
+  .input {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-ink-900 outline-none transition
+      placeholder:text-ink-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-200
+      dark:border-ink-700 dark:bg-ink-900 dark:text-ink-50 dark:focus:ring-brand-900;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-pill border border-ink-200 bg-white px-3 py-1.5 text-sm
+      text-ink-700 transition hover:border-brand-300 hover:text-brand-600
+      dark:border-ink-700 dark:bg-ink-900 dark:text-ink-200;
+  }
+  .chip-active {
+    @apply border-transparent bg-brand-500 text-white hover:border-transparent hover:text-white;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-ink-100 dark:bg-ink-800;
+  }
+}
+
+/* MapLibre のデフォルトUIをアプリのトーンに合わせる */
+.maplibregl-ctrl-group {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+.maplibregl-popup-content {
+  border-radius: 14px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* ===== 紙のしおり用（共有閲覧ページの印刷） ===== */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-break {
+    break-before: page;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+  .card,
+  .print-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+  }
+  a[href]:after {
+    content: '';
+  }
+  .print-compact {
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+}
