@@ -1,0 +1,47 @@
+# =============================================================================
+# Supabase 無料プランの「7日間アクセスなしで一時停止」を防ぐ。
+#
+# 3日に1回、DBに軽いクエリを1本投げるだけ。これだけで停止しなくなる。
+#
+# 必要な設定（GitHubリポジトリの Settings → Secrets and variables → Actions）:
+#   SUPABASE_URL       … https://xxxx.supabase.co
+#   SUPABASE_ANON_KEY  … 公開用キー（anon / publishable）
+#
+# ※ GitHubの仕様で、リポジトリに60日間コミットが無いとスケジュールが
+#   自動停止します。その場合はメールが届くので、Actionsタブから再有効化してください。
+# =============================================================================
+name: Supabase を起こしておく
+
+on:
+  schedule:
+    # 3日ごと 午前3時（UTC）= 日本時間の正午
+    - cron: '0 3 */3 * *'
+  # 手動でも実行できるようにする（Actionsタブの Run workflow ボタン）
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: データベースに1件だけ問い合わせる
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL と SUPABASE_ANON_KEY をリポジトリのSecretsに登録してください"
+            exit 1
+          fi
+
+          code=$(curl -s -o /tmp/res.json -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/places?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY")
+
+          echo "HTTP $code"
+          if [ "$code" = "200" ]; then
+            echo "✅ Supabase は起きています"
+          else
+            echo "::error::Supabase への問い合わせに失敗しました (HTTP $code)"
+            cat /tmp/res.json
+            exit 1
+          fi
