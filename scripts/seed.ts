@@ -9,7 +9,8 @@
  *  - .env.local に NEXT_PUBLIC_SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY があること
  *  - 対象のメールアドレスで一度ログイン（サインアップ）済みであること
  *
- * service role キーを使うのでRLSを迂回します。ローカル／自分のプロジェクトでのみ実行してください。
+ * 秘密キー（Secret key / service_role）を使うのでRLSを迂回します。
+ * ローカル／自分のプロジェクトでのみ実行してください。
  */
 import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';

@@ -127,8 +127,11 @@ http://localhost:3000 を開いてください。
      - 同じ画面の **Legacy API Keys** タブにある `anon public`（`eyJhbGci...`）でも動きます
        （こちらは2026年末に廃止予定）
    - ダッシュボード上部の **Connect** ボタンから、URLとキーをまとめてコピーするのが最速です
-4. シードを使う場合のみ、`service_role` キーを `SUPABASE_SERVICE_ROLE_KEY` に設定します
-   （**本番環境には置かないでください**。RLSを迂回できるキーです）
+4. シードを使う場合のみ、秘密キーを `SUPABASE_SERVICE_ROLE_KEY` に設定します
+   - **Project Settings → API Keys → Secret keys** で発行する `sb_secret_...` を推奨
+     （作成時に1度しか表示されません）
+   - **Legacy anon, service_role API keys** タブの `service_role` でも動きます（2026年末に廃止予定）
+   - **本番環境には置かないでください**。RLSを迂回できるキーです
 
 ### メールログイン（Magic Link）の設定
 
