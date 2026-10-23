@@ -33,8 +33,9 @@ export default async function NewPlacePage({
 
   const lists = await listLists(group.id);
 
+  // Share Target（スマホの共有メニュー）から来た場合は「リンクから」タブを開く
   const shared = [params.title, params.text, params.url].filter(Boolean).join('\n').trim();
-  const initialTab = shared ? 'sns' : params.tab === 'import' ? 'import' : params.tab === 'sns' ? 'sns' : 'search';
+  const initialTab = shared ? 'link' : params.tab === 'import' ? 'import' : params.tab === 'link' ? 'link' : 'search';
 
   return (
     <div>

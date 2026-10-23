@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { SearchTab } from './SearchTab';
-import { SnsTab } from './SnsTab';
+import { LinkTab } from './LinkTab';
 import { ImportTab } from './ImportTab';
 import { cn } from '@/lib/utils/cn';
 import type { PlaceList } from '@/types/database';
 
-type Tab = 'search' | 'sns' | 'import';
+type Tab = 'search' | 'link' | 'import';
 
 const TABS: Array<{ value: Tab; label: string; emoji: string }> = [
-  { value: 'search', label: '検索', emoji: '🔎' },
-  { value: 'sns', label: 'SNS貼り付け', emoji: '📋' },
+  { value: 'search', label: 'さがす', emoji: '🔎' },
+  { value: 'link', label: 'リンクから', emoji: '🔗' },
   { value: 'import', label: 'インポート', emoji: '📥' },
 ];
 
@@ -57,9 +57,7 @@ export function AddPlaceTabs({
 
       <div role="tabpanel">
         {tab === 'search' && <SearchTab groupId={groupId} lists={lists} initialQuery={initialQuery} />}
-        {tab === 'sns' && (
-          <SnsTab groupId={groupId} lists={lists} initialText={sharedText} autoRun={Boolean(sharedText)} />
-        )}
+        {tab === 'link' && <LinkTab groupId={groupId} lists={lists} initialText={sharedText} />}
         {tab === 'import' && <ImportTab groupId={groupId} />}
       </div>
     </div>
