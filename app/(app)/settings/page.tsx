@@ -139,17 +139,6 @@ export default async function SettingsPage() {
         />
       </SettingsGroup>
 
-      {/* その他 */}
-      <SettingsGroup title="その他">
-        <SettingsLinkRow
-          href="https://github.com/yuto123456gj/tabimemo"
-          external
-          icon={<IconLink width={18} height={18} />}
-          label="ソースコード（GitHub）"
-        />
-        <SettingsInfoRow label="バージョン" value="0.1.0" />
-      </SettingsGroup>
-
       {/* ログアウト */}
       <form action="/auth/signout" method="post">
         <Button type="submit" variant="outline" className="w-full text-red-500">
