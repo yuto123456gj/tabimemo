@@ -146,18 +146,17 @@ export default async function SettingsPage() {
       {/* 連携状況 */}
       <SettingsGroup
         title="連携状況"
-        footer="APIキーを足すと精度が上がりますが、未設定でも全機能が使えます。"
+        footer="いまはすべて無料のサービスで動いています。お店が見つかりにくいと感じたら、Google Places を繋ぐと検索精度が上がり、写真も付くようになります（従量課金）。"
       >
         <SettingsInfoRow
           icon={<IconMap width={18} height={18} />}
           label="場所検索"
           value={<Badge tone="brand">{env.googlePlacesKey ? 'Google Places' : 'OpenStreetMap'}</Badge>}
-          description={env.googlePlacesKey ? undefined : 'GOOGLE_PLACES_API_KEY を入れると検索精度が上がり、写真が付きます'}
-        />
-        <SettingsInfoRow
-          icon={<IconSparkles width={18} height={18} />}
-          label="テキストの読み取り"
-          value={<Badge tone="brand">{env.anthropicKey ? 'Claude' : 'かんたん抽出'}</Badge>}
+          description={
+            env.googlePlacesKey
+              ? 'Googleの地図データで検索しています'
+              : '無料のOpenStreetMapで検索しています。個人店や新しいお店は見つからないことがあります'
+          }
         />
         <SettingsInfoRow
           icon={<IconRoute width={18} height={18} />}
