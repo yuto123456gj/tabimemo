@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
@@ -10,16 +11,16 @@ export interface GroupWithRole extends Group {
   member_count: number;
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async (): Promise<Profile | null> => {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createSupabaseServerClient();
   const {
@@ -38,10 +39,13 @@ export async function getProfile(): Promise<Profile | null> {
       created_at: user.created_at,
     }
   );
-}
+});
 
-/** 自分が所属するグループ（メンバー数つき） */
-export async function getMyGroups(): Promise<GroupWithRole[]> {
+/**
+ * 自分が所属するグループ（メンバー数つき）。
+ * 1リクエスト中に何度呼んでも、実際の問い合わせは1回だけになる（React cache）。
+ */
+export const getMyGroups = cache(async (): Promise<GroupWithRole[]> => {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createSupabaseServerClient();
   const {
@@ -85,20 +89,20 @@ export async function getMyGroups(): Promise<GroupWithRole[]> {
   }
 
   return groups;
-}
+});
 
 /**
  * いま操作対象になっているグループ。
  * Cookie に保存された選択を優先し、無ければ最初のグループ。
  */
-export async function getActiveGroup(): Promise<GroupWithRole | null> {
+export const getActiveGroup = cache(async (): Promise<GroupWithRole | null> => {
   const groups = await getMyGroups();
   if (groups.length === 0) return null;
 
   const cookieStore = await cookies();
   const selected = cookieStore.get(ACTIVE_GROUP_COOKIE)?.value;
   return groups.find((g) => g.id === selected) ?? groups[0];
-}
+});
 
 /** ページ側で「ログイン済み + グループあり」を前提にしたい時に使う */
 export async function requireContext() {
