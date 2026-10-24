@@ -1,12 +1,24 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ProfileSettings } from '@/components/layout/ProfileSettings';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { Badge, Card, SectionTitle } from '@/components/ui/Card';
+import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } from '@/components/layout/SettingsRow';
+import { Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { IconChevronRight, IconUsers } from '@/components/ui/Icons';
+import {
+  IconBook,
+  IconLink,
+  IconList,
+  IconMap,
+  IconPin,
+  IconRoute,
+  IconSettings,
+  IconSparkles,
+  IconUsers,
+} from '@/components/ui/Icons';
 import { APP_NAME, APP_NAME_JA } from '@/lib/constants';
 import { getActiveGroup, getCurrentUser, getMyGroups, getProfile } from '@/lib/data/session';
+import { countPlaces, listLists, listTags } from '@/lib/data/places';
+import { listTrips } from '@/lib/data/trips';
 import { env, isSupabaseConfigured } from '@/lib/env';
 
 export const metadata: Metadata = { title: '設定' };
@@ -19,100 +31,169 @@ export default async function SettingsPage() {
     getActiveGroup(),
   ]);
 
-  const features = [
-    {
-      label: '場所検索',
-      value: env.googlePlacesKey ? 'Google Places' : 'OpenStreetMap (Nominatim)',
-      hint: env.googlePlacesKey
-        ? 'GOOGLE_PLACES_API_KEY が設定されています'
-        : 'GOOGLE_PLACES_API_KEY を入れると、店名の検索精度と写真が良くなります',
-    },
-    {
-      label: 'SNSからの読み取り',
-      value: env.anthropicKey ? 'Claude（AI抽出）' : 'かんたん抽出（ルールベース）',
-      hint: env.anthropicKey
-        ? 'ANTHROPIC_API_KEY が設定されています'
-        : 'ANTHROPIC_API_KEY を入れると、長いキャプションからの店名抽出が賢くなります',
-    },
-    {
-      label: 'ルート計算',
-      value: 'OSRM（失敗時は直線距離）',
-      hint: 'キーは不要です',
-    },
-    {
-      label: 'データベース',
-      value: isSupabaseConfigured() ? 'Supabase 接続中' : '未設定',
-      hint: isSupabaseConfigured() ? '' : 'NEXT_PUBLIC_SUPABASE_URL と ANON_KEY を .env.local に設定してください',
-    },
-  ];
+  const [counts, trips, lists, tags] = activeGroup
+    ? await Promise.all([
+        countPlaces(activeGroup.id),
+        listTrips(activeGroup.id),
+        listLists(activeGroup.id),
+        listTags(activeGroup.id),
+      ])
+    : [{ want: 0, visited: 0 }, [], [], []];
+
+  const displayName = profile?.display_name ?? 'たびびと';
+  const initial = displayName.slice(0, 1);
 
   return (
-    <div className="space-y-5">
-      <h1 className="text-xl font-extrabold tracking-tight text-ink-900 dark:text-white">設定</h1>
+    <div className="space-y-6">
+      {/* プロフィールヘッダー */}
+      <section className="flex items-center gap-4">
+        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-brand-gradient text-2xl font-extrabold text-white shadow-lift">
+          {initial}
+        </span>
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-extrabold tracking-tight text-ink-900 dark:text-white">
+            {displayName}
+          </h1>
+          <p className="truncate text-sm text-ink-500 dark:text-ink-400">{user?.email ?? '—'}</p>
+        </div>
+      </section>
 
-      <section>
-        <SectionTitle>プロフィール</SectionTitle>
-        <Card className="space-y-4">
-          <p className="text-sm text-ink-500 dark:text-ink-400">
-            ログイン中: <span className="font-medium text-ink-800 dark:text-ink-100">{user?.email ?? '—'}</span>
-          </p>
+      {/* 数字のまとめ */}
+      <section className="grid grid-cols-3 gap-3">
+        <div className="card p-3 text-center">
+          <p className="text-2xl font-extrabold text-brand-600 dark:text-brand-300">{counts.want}</p>
+          <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">行きたい</p>
+        </div>
+        <div className="card p-3 text-center">
+          <p className="text-2xl font-extrabold text-accent-600 dark:text-accent-300">{counts.visited}</p>
+          <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">行った！</p>
+        </div>
+        <div className="card p-3 text-center">
+          <p className="text-2xl font-extrabold text-ink-700 dark:text-ink-200">{trips.length}</p>
+          <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">しおり</p>
+        </div>
+      </section>
+
+      {/* アカウント */}
+      <SettingsGroup title="アカウント">
+        <li className="px-4 py-3.5">
           <ProfileSettings initialName={profile?.display_name ?? ''} />
-        </Card>
-      </section>
+        </li>
+        <SettingsInfoRow
+          icon={<IconSettings width={18} height={18} />}
+          label="メールアドレス"
+          value={<span className="max-w-[160px] truncate">{user?.email ?? '—'}</span>}
+        />
+      </SettingsGroup>
 
-      <section>
-        <SectionTitle>表示</SectionTitle>
-        <Card className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">ダークモード</p>
-            <p className="text-xs text-ink-500 dark:text-ink-400">端末の設定に合わせつつ、手動でも切り替えられます</p>
-          </div>
-          <ThemeToggle className="rounded-pill border border-ink-200 p-2.5 text-ink-600 transition hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800" />
-        </Card>
-      </section>
+      {/* グループ */}
+      <SettingsGroup
+        title="グループ"
+        footer="スポットとしおりはグループごとに保存されます。招待リンクを送ると、相手の画面にもすぐ反映されます。"
+      >
+        <SettingsInfoRow
+          icon={<IconUsers width={18} height={18} />}
+          label="いま表示中"
+          value={activeGroup?.name ?? 'なし'}
+        />
+        <SettingsLinkRow
+          href="/groups"
+          icon={<IconUsers width={18} height={18} />}
+          label="グループを管理・招待する"
+          value={`${groups.length}個`}
+        />
+      </SettingsGroup>
 
-      <section>
-        <SectionTitle>グループ</SectionTitle>
-        <Link href="/groups" className="card flex items-center gap-3 p-4 transition hover:shadow-lift">
-          <IconUsers className="text-accent-500" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold">{activeGroup?.name ?? 'グループがありません'}</span>
-            <span className="block text-xs text-ink-500 dark:text-ink-400">
-              {groups.length}個のグループ・招待リンクの発行はこちら
-            </span>
-          </span>
-          <IconChevronRight className="text-ink-400" />
-        </Link>
-      </section>
+      {/* データ */}
+      <SettingsGroup title="データ">
+        <SettingsLinkRow
+          href="/places"
+          icon={<IconPin width={18} height={18} />}
+          label="保存したスポット"
+          value={`${counts.want + counts.visited}件`}
+        />
+        <SettingsLinkRow
+          href="/trips"
+          icon={<IconBook width={18} height={18} />}
+          label="しおり"
+          value={`${trips.length}件`}
+        />
+        <SettingsInfoRow
+          icon={<IconList width={18} height={18} />}
+          label="リスト / タグ"
+          value={`${lists.length} / ${tags.length}`}
+        />
+        <SettingsLinkRow
+          href="/places/new?tab=import"
+          icon={<IconLink width={18} height={18} />}
+          label="Googleマップから一括取り込み"
+          description="Google Takeout の GeoJSON / CSV に対応"
+        />
+      </SettingsGroup>
 
-      <section>
-        <SectionTitle>連携状況</SectionTitle>
-        <Card>
-          <ul className="divide-y divide-ink-100 dark:divide-ink-800">
-            {features.map((f) => (
-              <li key={f.label} className="flex flex-wrap items-center gap-2 py-2.5 first:pt-0 last:pb-0">
-                <span className="w-32 shrink-0 text-sm text-ink-500 dark:text-ink-400">{f.label}</span>
-                <Badge tone="brand">{f.value}</Badge>
-                {f.hint && <span className="w-full text-xs text-ink-400">{f.hint}</span>}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </section>
+      {/* 表示 */}
+      <SettingsGroup title="表示">
+        <SettingsActionRow
+          icon={<IconSparkles width={18} height={18} />}
+          label="ダークモード"
+          description="端末の設定に合わせつつ、手動でも切り替えられます"
+          action={
+            <ThemeToggle className="rounded-pill border border-ink-200 p-2.5 text-ink-600 transition hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800" />
+          }
+        />
+      </SettingsGroup>
 
-      <section>
-        <SectionTitle>アカウント</SectionTitle>
-        <Card>
-          <form action="/auth/signout" method="post">
-            <Button type="submit" variant="outline" className="w-full text-red-500">
-              ログアウト
-            </Button>
-          </form>
-        </Card>
-      </section>
+      {/* 連携状況 */}
+      <SettingsGroup
+        title="連携状況"
+        footer="APIキーを足すと精度が上がりますが、未設定でも全機能が使えます。"
+      >
+        <SettingsInfoRow
+          icon={<IconMap width={18} height={18} />}
+          label="場所検索"
+          value={<Badge tone="brand">{env.googlePlacesKey ? 'Google Places' : 'OpenStreetMap'}</Badge>}
+          description={env.googlePlacesKey ? undefined : 'GOOGLE_PLACES_API_KEY を入れると検索精度が上がり、写真が付きます'}
+        />
+        <SettingsInfoRow
+          icon={<IconSparkles width={18} height={18} />}
+          label="テキストの読み取り"
+          value={<Badge tone="brand">{env.anthropicKey ? 'Claude' : 'かんたん抽出'}</Badge>}
+        />
+        <SettingsInfoRow
+          icon={<IconRoute width={18} height={18} />}
+          label="ルート計算"
+          value={<Badge tone="brand">OSRM</Badge>}
+          description="取得できない時は直線距離で計算します"
+        />
+        <SettingsInfoRow
+          icon={<IconSettings width={18} height={18} />}
+          label="データベース"
+          value={<Badge tone={isSupabaseConfigured() ? 'accent' : 'neutral'}>{isSupabaseConfigured() ? '接続中' : '未設定'}</Badge>}
+        />
+      </SettingsGroup>
 
-      <p className="pb-4 text-center text-xs text-ink-400">
-        {APP_NAME_JA}（{APP_NAME}）・地図データ © OpenStreetMap contributors
+      {/* その他 */}
+      <SettingsGroup title="その他">
+        <SettingsLinkRow
+          href="https://github.com/yuto123456gj/tabimemo"
+          external
+          icon={<IconLink width={18} height={18} />}
+          label="ソースコード（GitHub）"
+        />
+        <SettingsInfoRow label="バージョン" value="0.1.0" />
+      </SettingsGroup>
+
+      {/* ログアウト */}
+      <form action="/auth/signout" method="post">
+        <Button type="submit" variant="outline" className="w-full text-red-500">
+          ログアウト
+        </Button>
+      </form>
+
+      <p className="pb-4 text-center text-xs leading-relaxed text-ink-400">
+        {APP_NAME_JA}（{APP_NAME}）
+        <br />
+        地図データ © OpenStreetMap contributors
       </p>
     </div>
   );
