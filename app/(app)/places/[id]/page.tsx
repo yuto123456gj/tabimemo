@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MapContainer } from '@/components/map/MapContainer';
 import { PlaceActions } from '@/components/places/PlaceActions';
+import { SetLocationCard } from '@/components/places/SetLocationCard';
 import { ReviewForm } from '@/components/places/ReviewForm';
 import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { Badge, Card, SectionTitle } from '@/components/ui/Card';
@@ -13,6 +14,7 @@ import { getPlace, listLists } from '@/lib/data/places';
 import { getCurrentUser, getGroupMembers } from '@/lib/data/session';
 import { formatJaDate, relativeFromNow } from '@/lib/utils/date';
 import { googleMapsPlaceUrl } from '@/lib/route/googleMaps';
+import { hasLocation } from '@/lib/utils/place';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -75,6 +77,7 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
               {place.status === 'visited' ? '✅ 行った！' : '✨ 行きたい'}
             </Badge>
             {place.planned_date && <Badge tone="accent">予定 {formatJaDate(place.planned_date)}</Badge>}
+            {!hasLocation(place) && <Badge tone="neutral">📍 場所は未設定</Badge>}
           </div>
 
           <h1 className="mt-2 text-xl font-extrabold tracking-tight text-ink-900 dark:text-white">{place.name}</h1>
@@ -100,15 +103,17 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <a
-              href={googleMapsPlaceUrl({ name: place.name, lat: place.lat, lng: place.lng })}
-              target="_blank"
-              rel="noreferrer"
-              className="chip"
-            >
-              <IconMap width={16} height={16} />
-              Googleマップで開く
-            </a>
+            {hasLocation(place) && (
+              <a
+                href={googleMapsPlaceUrl({ name: place.name, lat: place.lat, lng: place.lng })}
+                target="_blank"
+                rel="noreferrer"
+                className="chip"
+              >
+                <IconMap width={16} height={16} />
+                Googleマップで開く
+              </a>
+            )}
             {place.source_url && (
               <a href={place.source_url} target="_blank" rel="noreferrer" className="chip">
                 <IconLink width={16} height={16} />
@@ -119,11 +124,17 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* 地図 */}
-      <MapContainer
-        markers={[{ id: place.id, lat: place.lat, lng: place.lng, label: place.name, visited: place.status === 'visited' }]}
-        className="h-48 w-full border border-ink-100 dark:border-ink-800"
-      />
+      {/* 地図 / 場所が未設定ならここで決められる */}
+      {hasLocation(place) ? (
+        <MapContainer
+          markers={[
+            { id: place.id, lat: place.lat, lng: place.lng, label: place.name, visited: place.status === 'visited' },
+          ]}
+          className="h-48 w-full border border-ink-100 dark:border-ink-800"
+        />
+      ) : (
+        <SetLocationCard placeId={place.id} placeName={place.name} />
+      )}
 
       {/* 自分の記録 */}
       <section>

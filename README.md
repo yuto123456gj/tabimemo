@@ -30,6 +30,8 @@
 
 ### スポットを貯める
 - 店名・地名で検索して保存（名前・住所・緯度経度・カテゴリ・写真）
+- **地図で見つからないお店は、名前だけで先に登録できます。** 場所は詳細画面から
+  あとで地図をタップして決められます（決めるまでは地図とルート計算の対象外）
 - メモ、予定日、元の投稿URL、タグを付けられる
 - 保存時に、元の投稿URL（Instagram / TikTok / 食べログ など何でも）を一緒に残せます。
   詳細画面の「元の投稿を見る」からいつでも開けます
@@ -154,6 +156,7 @@ http://localhost:3000 を開いてください。
    1. `supabase/migrations/0001_init.sql` … テーブル・インデックス・トリガー・Realtime設定
    2. `supabase/migrations/0002_rls.sql` … Row Level Security と RPC
    3. `supabase/migrations/0003_storage.sql` … 写真用のStorageバケット
+   4. `supabase/migrations/0004_optional_location.sql` … 座標を後から設定できるようにする
 3. エラーが出ないことを確認します（何度流しても安全なように書いてあります）
 
 ### 方法B: Supabase CLI から

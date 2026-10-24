@@ -9,8 +9,9 @@ export interface PlaceInput {
   groupId: string;
   name: string;
   address?: string | null;
-  lat: number;
-  lng: number;
+  /** 地図で見つからなかった場合は null のまま保存し、あとから設定できる */
+  lat?: number | null;
+  lng?: number | null;
   category?: string | null;
   photoUrl?: string | null;
   sourceUrl?: string | null;
@@ -53,7 +54,11 @@ export async function createPlace(input: PlaceInput): Promise<ActionResult<strin
   if (!ctx.ok) return fail(ctx.error);
 
   if (!input.name?.trim()) return fail('スポット名を入力してください。');
-  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng)) return fail('場所（緯度経度）が決まっていません。');
+
+  // 座標は「両方そろう」か「両方空」のどちらか
+  const hasLat = typeof input.lat === 'number' && Number.isFinite(input.lat);
+  const hasLng = typeof input.lng === 'number' && Number.isFinite(input.lng);
+  if (hasLat !== hasLng) return fail('位置の指定が不完全です。もう一度地図を選び直してください。');
 
   const { data, error } = await ctx.supabase
     .from('places')
@@ -61,8 +66,8 @@ export async function createPlace(input: PlaceInput): Promise<ActionResult<strin
       group_id: input.groupId,
       name: input.name.trim(),
       address: input.address ?? null,
-      lat: input.lat,
-      lng: input.lng,
+      lat: hasLat ? input.lat : null,
+      lng: hasLng ? input.lng : null,
       category: input.category ?? null,
       photo_url: input.photoUrl ?? null,
       source_url: input.sourceUrl ?? null,
@@ -111,8 +116,8 @@ export async function updatePlace(
     photo_url: string | null;
     source_url: string | null;
     status: 'want' | 'visited';
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
   }>,
 ): Promise<ActionResult> {
   const ctx = await requireUser();

@@ -6,6 +6,7 @@ import { Notice, Spinner } from '@/components/ui/Feedback';
 import { IconPlus, IconSearch, IconSparkles } from '@/components/ui/Icons';
 import { categoryMeta } from '@/lib/constants';
 import { formatDistance, haversineDistance } from '@/lib/route/geo';
+import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
 import type { PlaceWithExtras } from '@/types/database';
 
@@ -48,7 +49,8 @@ export function AddToDayPanel({
     // 旅行先エリアの近く（30km以内）をおすすめ候補として上に出す
     const withDistance = filtered.map((p) => ({
       place: p,
-      distance: haversineDistance(area, { lat: p.lat, lng: p.lng }),
+      // 場所が未設定のスポットは「遠いもの」として扱い、おすすめ候補には出さない
+      distance: hasLocation(p) ? haversineDistance(area, { lat: p.lat, lng: p.lng }) : Number.POSITIVE_INFINITY,
     }));
     const near = withDistance
       .filter((w) => w.distance <= 30000)
@@ -141,7 +143,7 @@ export function AddToDayPanel({
                 <li key={place.id}>
                   <PlaceOption
                     place={place}
-                    distance={area ? haversineDistance(area, { lat: place.lat, lng: place.lng }) : null}
+                    distance={area && hasLocation(place) ? haversineDistance(area, { lat: place.lat, lng: place.lng }) : null}
                     checked={selected.includes(place.id)}
                     onToggle={() => toggle(place.id)}
                   />

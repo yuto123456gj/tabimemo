@@ -141,10 +141,35 @@ export function SearchTab({
           <EmptyState
             art="search"
             title="見つかりませんでした"
-            description="「店名 + エリア」で言い換えるか、地図をタップして場所を直接指定してください。"
+            description="地図に載っていないお店もあります。名前だけで先に登録して、場所はあとから決められます。"
           />
+
+          {/* 名前だけで先に登録する */}
+          <Button
+            className="w-full"
+            onClick={() =>
+              setDraft({
+                name: query.trim(),
+                address: null,
+                lat: null,
+                lng: null,
+                category: null,
+              })
+            }
+          >
+            「{query.trim()}」を名前だけで登録する
+          </Button>
+          <p className="-mt-1 text-center text-xs text-ink-400">
+            場所は、あとでスポットの詳細画面から地図をタップして決められます
+          </p>
+
+          <div className="flex items-center gap-3 pt-1 text-xs text-ink-400">
+            <span className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
+            または、いま地図で指定する
+            <span className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
+          </div>
+
           <div>
-            <p className="label">地図をタップして場所を指定する</p>
             <MapContainer
               markers={manual ? [{ id: 'manual', lat: manual.lat, lng: manual.lng }] : []}
               onMapClick={setManual}

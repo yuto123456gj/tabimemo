@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/Button';
 import { Notice, Spinner } from '@/components/ui/Feedback';
 import { PLACE_CATEGORIES } from '@/lib/constants';
 import { createPlace } from '@/lib/actions/places';
+import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
 import type { PlaceList } from '@/types/database';
 
 export interface DraftPlace {
   name: string;
   address: string | null;
-  lat: number;
-  lng: number;
+  /** 場所が未定のまま登録する場合は null（あとで詳細画面から設定できる） */
+  lat: number | null;
+  lng: number | null;
   category: string | null;
   photoUrl?: string | null;
   externalId?: string | null;
@@ -79,17 +81,25 @@ export function SavePlaceForm({
   return (
     <div className="space-y-4">
       <div className="card overflow-hidden p-0">
-        <MapContainer
-          markers={[{ id: 'draft', lat: draft.lat, lng: draft.lng, label: name }]}
-          className="h-40 w-full"
-          interactive={false}
-        />
+        {hasLocation(draft) ? (
+          <MapContainer
+            markers={[{ id: 'draft', lat: draft.lat, lng: draft.lng, label: name }]}
+            className="h-40 w-full"
+            interactive={false}
+          />
+        ) : (
+          <div className="flex h-24 items-center justify-center gap-2 bg-sky-gradient px-4 text-center text-xs text-ink-600 dark:bg-ink-800 dark:text-ink-300">
+            場所は未設定で保存します。あとで詳細画面から地図でピンを打てます。
+          </div>
+        )}
         <div className="p-4">
           <p className="text-sm font-bold text-ink-900 dark:text-ink-50">{draft.name}</p>
           {draft.address && <p className="mt-0.5 text-xs text-ink-500 dark:text-ink-400">{draft.address}</p>}
-          <p className="mt-1 text-[11px] text-ink-400">
-            {draft.lat.toFixed(5)}, {draft.lng.toFixed(5)}
-          </p>
+          {hasLocation(draft) && (
+            <p className="mt-1 text-[11px] text-ink-400">
+              {draft.lat.toFixed(5)}, {draft.lng.toFixed(5)}
+            </p>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { IconChevronRight, IconList, IconMap, IconPin, IconSearch } from '@/components/ui/Icons';
 import { PLACE_CATEGORIES, categoryMeta } from '@/lib/constants';
 import { haversineDistance, formatDistance } from '@/lib/route/geo';
+import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
 import type { PlaceList, PlaceWithExtras, Tag } from '@/types/database';
 
@@ -85,7 +86,7 @@ export function PlacesExplorer({
 
     const withDistance = result.map((p) => ({
       place: p,
-      distance: myLocation ? haversineDistance(myLocation, { lat: p.lat, lng: p.lng }) : null,
+      distance: myLocation && hasLocation(p) ? haversineDistance(myLocation, { lat: p.lat, lng: p.lng }) : null,
     }));
 
     switch (sort) {
@@ -111,15 +112,21 @@ export function PlacesExplorer({
 
   const markers = useMemo(
     () =>
-      filtered.map(({ place }) => ({
-        id: place.id,
-        lat: place.lat,
-        lng: place.lng,
-        label: place.name,
-        visited: place.status === 'visited',
-      })),
+      filtered
+        .map(({ place }) => place)
+        .filter(hasLocation)
+        .map((place) => ({
+          id: place.id,
+          lat: place.lat,
+          lng: place.lng,
+          label: place.name,
+          visited: place.status === 'visited',
+        })),
     [filtered],
   );
+
+  /** 地図に出せないスポット（場所が未設定）の件数 */
+  const unlocatedCount = useMemo(() => filtered.filter(({ place }) => !hasLocation(place)).length, [filtered]);
 
   const selected = filtered.find((f) => f.place.id === selectedId)?.place ?? null;
   const activeFilterCount =
@@ -312,6 +319,12 @@ export function PlacesExplorer({
             showMyLocation={myLocation}
             className="h-[52vh] min-h-[320px] w-full border border-ink-100 dark:border-ink-800"
           />
+          {unlocatedCount > 0 && (
+            <p className="text-center text-xs text-ink-500 dark:text-ink-400">
+              場所が未設定のスポットが{unlocatedCount}件あります（地図には出ません）。
+              詳細画面から地図をタップして設定できます。
+            </p>
+          )}
           {selected ? (
             <Link
               href={`/places/${selected.id}`}
@@ -323,11 +336,12 @@ export function PlacesExplorer({
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-bold text-ink-900 dark:text-ink-50">{selected.name}</span>
                 <span className="block truncate text-xs text-ink-500 dark:text-ink-400">
-                  {selected.address ?? `${selected.lat.toFixed(4)}, ${selected.lng.toFixed(4)}`}
+                  {selected.address ??
+                    (hasLocation(selected) ? `${selected.lat.toFixed(4)}, ${selected.lng.toFixed(4)}` : '場所は未設定')}
                 </span>
                 <span className="mt-1 flex items-center gap-1.5">
                   <Badge tone="brand">{categoryMeta(selected.category).label}</Badge>
-                  {myLocation && (
+                  {myLocation && hasLocation(selected) && (
                     <Badge tone="neutral">
                       {formatDistance(haversineDistance(myLocation, { lat: selected.lat, lng: selected.lng }))}
                     </Badge>

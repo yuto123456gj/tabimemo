@@ -42,8 +42,10 @@ export interface Place {
   group_id: string;
   name: string;
   address: string | null;
-  lat: number;
-  lng: number;
+  /** 緯度。未設定（あとで地図でピンを打つ）の場合は null */
+  lat: number | null;
+  /** 経度。未設定の場合は null */
+  lng: number | null;
   category: string | null;
   photo_url: string | null;
   source_url: string | null;

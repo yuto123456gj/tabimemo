@@ -10,7 +10,8 @@ import { ROUTABLE_MODES, transportMeta } from '@/lib/constants';
 import { formatDistance, formatDuration } from '@/lib/route/geo';
 import { TRANSPORT_TO_GOOGLE_MODE, googleMapsDirectionsUrl } from '@/lib/route/googleMaps';
 import { cn } from '@/lib/utils/cn';
-import type { TripItemWithPlace } from '@/types/database';
+import { hasLocation, type Located } from '@/lib/utils/place';
+import type { Place, TripItemWithPlace } from '@/types/database';
 
 export interface RouteLegInfo {
   fromIndex: number;
@@ -33,9 +34,11 @@ interface MatrixResponse {
   error?: string;
 }
 
-/** 座標を持つ項目だけがルート計算の対象になる */
-function routableItems(items: TripItemWithPlace[]) {
-  return items.filter((i) => i.places && Number.isFinite(i.places.lat) && Number.isFinite(i.places.lng));
+/** ルート計算に使える項目（スポットが紐づき、座標も決まっているもの） */
+type RoutableItem = TripItemWithPlace & { places: Located<Place> };
+
+function routableItems(items: TripItemWithPlace[]): RoutableItem[] {
+  return items.filter((i): i is RoutableItem => Boolean(i.places) && hasLocation(i.places as Place));
 }
 
 export function RoutePanel({
@@ -67,24 +70,24 @@ export function RoutePanel({
   const effectiveEndId = endId ?? targets[targets.length - 1]?.id ?? null;
 
   /** プレビュー中はその順番、そうでなければ現在の順番で地図を描く */
-  const displayed = useMemo(() => {
+  const displayed = useMemo((): RoutableItem[] => {
     if (!preview) return targets;
     const byId = new Map(targets.map((i) => [i.id, i]));
-    return preview.orderedIds.map((id) => byId.get(id)).filter((i): i is TripItemWithPlace => Boolean(i));
+    return preview.orderedIds.map((id) => byId.get(id)).filter((i): i is RoutableItem => Boolean(i));
   }, [preview, targets]);
 
   const markers = displayed.map((item, index) => ({
     id: item.id,
-    lat: item.places!.lat,
-    lng: item.places!.lng,
-    label: item.places!.name,
+    lat: item.places.lat,
+    lng: item.places.lng,
+    label: item.places.name,
     order: index + 1,
   }));
 
-  const routeLine = displayed.map((item) => ({ lat: item.places!.lat, lng: item.places!.lng }));
+  const routeLine = displayed.map((item) => ({ lat: item.places.lat, lng: item.places.lng }));
 
   const googleUrl = googleMapsDirectionsUrl(
-    displayed.map((item) => ({ lat: item.places!.lat, lng: item.places!.lng, name: item.places!.name })),
+    displayed.map((item) => ({ lat: item.places.lat, lng: item.places.lng, name: item.places.name })),
     TRANSPORT_TO_GOOGLE_MODE[mode] ?? 'walking',
   );
 
@@ -100,9 +103,9 @@ export function RoutePanel({
     try {
       const points = targets.map((item) => ({
         id: item.id,
-        lat: item.places!.lat,
-        lng: item.places!.lng,
-        name: item.places!.name,
+        lat: item.places.lat,
+        lng: item.places.lng,
+        name: item.places.name,
       }));
 
       const startIndex = fixStart ? points.findIndex((p) => p.id === effectiveStartId) : null;
@@ -211,7 +214,7 @@ export function RoutePanel({
                   >
                     {targets.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.places?.name}
+                        {item.places.name}
                       </option>
                     ))}
                   </select>
@@ -236,7 +239,7 @@ export function RoutePanel({
                   >
                     {targets.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.places?.name}
+                        {item.places.name}
                       </option>
                     ))}
                   </select>
@@ -272,7 +275,7 @@ export function RoutePanel({
                     <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500 text-[10px] font-bold text-white">
                       {index + 1}
                     </span>
-                    <span className="truncate">{item.places?.name}</span>
+                    <span className="truncate">{item.places.name}</span>
                   </li>
                 ))}
               </ol>

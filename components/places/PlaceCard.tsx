@@ -5,6 +5,7 @@ import { categoryMeta } from '@/lib/constants';
 import { formatJaDateShort } from '@/lib/utils/date';
 import { formatDistance } from '@/lib/route/geo';
 import { cn } from '@/lib/utils/cn';
+import { hasLocation } from '@/lib/utils/place';
 import type { PlaceWithExtras } from '@/types/database';
 
 export function placeAverageRating(place: PlaceWithExtras): number | null {
@@ -90,6 +91,7 @@ export function PlaceCard({
           {place.planned_date && <Badge tone="accent">{formatJaDateShort(place.planned_date)}</Badge>}
           {typeof distanceMeters === 'number' && <Badge tone="neutral">{formatDistance(distanceMeters)}</Badge>}
           {placeWantAgain(place) && <Badge tone="accent">また行きたい</Badge>}
+          {!hasLocation(place) && <Badge tone="neutral">📍 場所は未設定</Badge>}
         </div>
 
         {rating !== null && (
