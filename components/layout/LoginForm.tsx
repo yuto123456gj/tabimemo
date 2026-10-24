@@ -36,8 +36,19 @@ export function LoginForm({ next = '/' }: { next?: string }) {
       <div className="space-y-4">
         <Notice tone="success">
           <strong className="block">{sent} にログインリンクを送りました</strong>
-          メールを開いてリンクをタップすると、そのままログインできます。
+          メールが届かない時は、迷惑メールフォルダも確認してください。
         </Notice>
+
+        <Notice tone="warn">
+          <strong className="block">⚠️ リンクは「このブラウザ」で開いてください</strong>
+          メールアプリの中でリンクをタップすると、別のブラウザが開いてログインに失敗します。
+          <span className="mt-2 block font-medium">確実な開き方：</span>
+          <span className="mt-1 block">
+            メール内のリンクを<strong>長押し</strong> → <strong>「リンクをコピー」</strong> →
+            この画面のアドレス欄に貼り付けて開く
+          </span>
+        </Notice>
+
         <Button variant="ghost" onClick={() => setSent(null)} className="w-full">
           別のメールアドレスを使う
         </Button>
@@ -49,18 +60,23 @@ export function LoginForm({ next = '/' }: { next?: string }) {
     <div className="space-y-5">
       {error && <Notice tone="error">{error}</Notice>}
 
-      <form action={handleGoogle}>
-        <input type="hidden" name="next" value={next} />
-        <Button type="submit" variant="outline" size="lg" className="w-full" disabled={pending}>
+      <div>
+        <p className="mb-2 text-center text-xs font-bold text-accent-600 dark:text-accent-300">
+          ✓ いちばん確実です（メールのやりとりが不要）
+        </p>
+        <form action={handleGoogle}>
+          <input type="hidden" name="next" value={next} />
+          <Button type="submit" variant="outline" size="lg" className="w-full" disabled={pending}>
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.6 20.1H24v7.8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.5-5.5C33.9 6.1 29.2 4 24 4 13 4 4 13 4 24s9 20 20 20c11 0 19.3-8 19.3-20 0-1.3-.1-2.6-.7-3.9Z" />
             <path fill="#FF3D00" d="M6.3 14.7l6.4 4.7C14.5 15.1 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.5-5.5C33.9 6.1 29.2 4 24 4 16.3 4 9.7 8.3 6.3 14.7Z" />
             <path fill="#4CAF50" d="M24 44c5.2 0 9.8-2 13.3-5.2l-6.1-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.1-11.3-8l-6.4 4.9C9.6 39.6 16.2 44 24 44Z" />
             <path fill="#1976D2" d="M43.6 20.1H24v7.8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.1 5.2c3.6-3.3 6-8.3 6-14.7 0-1.3-.1-2.6-.7-3.9Z" />
           </svg>
-          Googleでログイン
-        </Button>
-      </form>
+            Googleでログイン
+          </Button>
+        </form>
+      </div>
 
       <div className="flex items-center gap-3 text-xs text-ink-400">
         <span className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
@@ -88,7 +104,11 @@ export function LoginForm({ next = '/' }: { next?: string }) {
           {pending ? <Spinner /> : 'ログインリンクを送る'}
         </Button>
         <p className="text-xs leading-relaxed text-ink-500 dark:text-ink-400">
-          パスワードは不要です。届いたメールのリンクをタップするだけでログインできます。
+          パスワードは不要です。
+          <strong className="text-ink-700 dark:text-ink-200">
+            届いたリンクは、必ずこのブラウザで開いてください。
+          </strong>
+          メールアプリ内で開くとログインに失敗します。
         </p>
       </form>
     </div>

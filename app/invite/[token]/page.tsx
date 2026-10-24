@@ -85,8 +85,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                     <ButtonLink href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`} size="lg" className="w-full">
                       ログインして参加する
                     </ButtonLink>
-                    <p className="mt-3 text-xs text-ink-400">
+                    <p className="mt-3 text-xs leading-relaxed text-ink-400">
                       ログイン後、自動でこの画面に戻ってきます。
+                      <br />
+                      <strong className="text-ink-600 dark:text-ink-300">
+                        「Googleでログイン」がいちばん簡単です。
+                      </strong>
+                      <br />
+                      メールを使う場合、届いたリンクは必ず同じブラウザで開いてください。
                     </p>
                   </>
                 )}
