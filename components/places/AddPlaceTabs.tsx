@@ -2,16 +2,14 @@
 
 import { useState } from 'react';
 import { SearchTab } from './SearchTab';
-import { LinkTab } from './LinkTab';
 import { ImportTab } from './ImportTab';
 import { cn } from '@/lib/utils/cn';
 import type { PlaceList } from '@/types/database';
 
-type Tab = 'search' | 'link' | 'import';
+type Tab = 'search' | 'import';
 
 const TABS: Array<{ value: Tab; label: string; emoji: string }> = [
   { value: 'search', label: 'さがす', emoji: '🔎' },
-  { value: 'link', label: 'リンクから', emoji: '🔗' },
   { value: 'import', label: 'インポート', emoji: '📥' },
 ];
 
@@ -19,13 +17,11 @@ export function AddPlaceTabs({
   groupId,
   lists,
   initialTab = 'search',
-  sharedText = '',
   initialQuery = '',
 }: {
   groupId: string;
   lists: PlaceList[];
   initialTab?: Tab;
-  sharedText?: string;
   initialQuery?: string;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -57,7 +53,6 @@ export function AddPlaceTabs({
 
       <div role="tabpanel">
         {tab === 'search' && <SearchTab groupId={groupId} lists={lists} initialQuery={initialQuery} />}
-        {tab === 'link' && <LinkTab groupId={groupId} lists={lists} initialText={sharedText} />}
         {tab === 'import' && <ImportTab groupId={groupId} />}
       </div>
     </div>

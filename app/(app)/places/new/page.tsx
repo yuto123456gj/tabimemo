@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: 'スポットを追加' };
 export default async function NewPlacePage({
   searchParams,
 }: {
-  searchParams: Promise<{ title?: string; text?: string; url?: string; q?: string; tab?: string }>;
+  searchParams: Promise<{ q?: string; tab?: string }>;
 }) {
   const params = await searchParams;
   const group = await getActiveGroup();
@@ -33,9 +33,7 @@ export default async function NewPlacePage({
 
   const lists = await listLists(group.id);
 
-  // Share Target（スマホの共有メニュー）から来た場合は「リンクから」タブを開く
-  const shared = [params.title, params.text, params.url].filter(Boolean).join('\n').trim();
-  const initialTab = shared ? 'link' : params.tab === 'import' ? 'import' : params.tab === 'link' ? 'link' : 'search';
+  const initialTab = params.tab === 'import' ? 'import' : 'search';
 
   return (
     <div>
@@ -49,13 +47,7 @@ export default async function NewPlacePage({
         </p>
       </div>
 
-      <AddPlaceTabs
-        groupId={group.id}
-        lists={lists}
-        initialTab={initialTab}
-        sharedText={shared}
-        initialQuery={params.q ?? ''}
-      />
+      <AddPlaceTabs groupId={group.id} lists={lists} initialTab={initialTab} initialQuery={params.q ?? ''} />
     </div>
   );
 }
