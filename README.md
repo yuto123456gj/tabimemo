@@ -36,7 +36,6 @@
 
 > SNSの投稿ページを自動で取得して店名を抜き出すことはしません。各サービスの規約に反するうえ、
 > 仕様変更で頻繁に壊れるためです。
-- **Googleマップの保存場所を一括インポート**: Google Takeout の GeoJSON / CSV に対応。名前が似ていて50m以内の場所は重複登録しません
 - ステータスは「行きたい／行った！」。評価・感想・「また行きたい」は**メンバーごとに個別**に記録
 - 1つのスポットを複数のリストに入れられます
 
@@ -290,9 +289,8 @@ app/
   api/                      外部API呼び出しはすべてここ（サーバー側）
     places/search           場所検索（Nominatim / Google）
     places/photo            Google写真の中継（キーを隠すため）
-    extract                 SNSテキストからの抽出＋候補検索
+    extract                 テキストからの場所抽出（現在は画面から未使用）
     route/matrix            距離行列＋ルート最適化
-    import/takeout          Google Takeout の解析
     health                  設定状況の確認
   auth/callback             OAuth / マジックリンクの着地点
   s/[token]                 しおりの共有閲覧ページ（ログイン不要・印刷対応）
@@ -316,7 +314,7 @@ lib/
     routing/                osrm.ts, haversine.ts, index.ts（フォールバック）
   route/                    optimize.ts（最近傍法＋2-opt）, geo.ts, googleMaps.ts
   trips/reorder.ts          日程の並べ替えロジック（純粋関数）
-  utils/                    date, dedupe（重複判定）, takeout（パーサー）, ratelimit
+  utils/                    date, cn, ratelimit
   data/                     Server Component用のデータ取得
   actions/                  Server Actions（places / trips / groups / auth）
 
@@ -334,14 +332,12 @@ public/                     manifest.webmanifest, sw.js, offline.html, icons/
 npm test
 ```
 
-外部通信を伴わない純粋関数を対象にしています（86件）。
+外部通信を伴わない純粋関数を対象にしています（66件）。
 
 | ファイル | 内容 |
 | --- | --- |
 | `tests/route/optimize.test.ts` | **総距離が単純な入力順より短くなること**、**開始・終了の固定が守られること**、全地点をちょうど1回ずつ通ること、15地点が1秒以内に終わること、提案が元より悪化しないこと |
 | `tests/trips/reorder.test.ts` | 上下移動 / 日をまたぐ移動 / ドラッグ&ドロップ / 最適化結果の適用 / 保存すべき差分の抽出 |
-| `tests/utils/dedupe.test.ts` | 名前の類似度（表記ゆれ）と50m判定による重複スポットの検出 |
-| `tests/utils/takeout.test.ts` | GeoJSON / CSV のパース、GoogleマップURLからの座標・ID抽出 |
 | `tests/utils/extract.test.ts` | SNSキャプションからの店名・エリア・カテゴリ・タグの抽出 |
 | `tests/utils/date.test.ts` | 日本語の日付表記、旅程の日付計算、タイムゾーンずれの防止 |
 

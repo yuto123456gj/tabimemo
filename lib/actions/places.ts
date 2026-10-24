@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { requireUser } from './session';
-import { dedupeCandidates } from '@/lib/utils/dedupe';
 import { fail, succeed, type ActionResult } from './types';
 
 export interface PlaceInput {
@@ -242,72 +241,4 @@ export async function togglePlaceInList(listId: string, placeId: string, include
   revalidatePath('/places');
   revalidatePath(`/places/${placeId}`);
   return succeed();
-}
-
-export interface ImportRow {
-  name: string;
-  address: string | null;
-  lat: number;
-  lng: number;
-  category?: string | null;
-  externalId?: string | null;
-  sourceUrl?: string | null;
-  memo?: string | null;
-}
-
-/**
- * Googleマップの保存場所の一括取り込み。
- * 既存スポットと「名前の類似度 + 50m以内」で重複判定し、重複は登録しない。
- */
-export async function importPlaces(
-  groupId: string,
-  rows: ImportRow[],
-): Promise<ActionResult<{ imported: number; skipped: number }>> {
-  const ctx = await requireUser();
-  if (!ctx.ok) return fail(ctx.error);
-  if (rows.length === 0) return fail('取り込める行がありませんでした。');
-
-  const { data: existingRaw } = await ctx.supabase
-    .from('places')
-    .select('id, name, lat, lng, external_id')
-    .eq('group_id', groupId);
-
-  const existing = ((existingRaw ?? []) as { name: string; lat: number; lng: number; external_id: string | null }[]).map(
-    (p) => ({ name: p.name, lat: p.lat, lng: p.lng, externalId: p.external_id }),
-  );
-
-  const valid = rows.filter((r) => r.name?.trim() && Number.isFinite(r.lat) && Number.isFinite(r.lng));
-  const { unique, duplicates } = dedupeCandidates(
-    valid.map((r) => ({ ...r, externalId: r.externalId ?? null })),
-    existing,
-  );
-
-  if (unique.length === 0) {
-    return succeed({ imported: 0, skipped: duplicates.length + (rows.length - valid.length) });
-  }
-
-  const { error } = await ctx.supabase.from('places').insert(
-    unique.map((r) => ({
-      group_id: groupId,
-      name: r.name.trim(),
-      address: r.address ?? null,
-      lat: r.lat,
-      lng: r.lng,
-      category: r.category ?? null,
-      external_id: r.externalId ?? null,
-      source_url: r.sourceUrl ?? null,
-      memo: r.memo ?? null,
-      added_by: ctx.user.id,
-      status: 'want' as const,
-    })),
-  );
-
-  if (error) return fail(error.message);
-
-  revalidatePath('/places');
-  revalidatePath('/');
-  return succeed({
-    imported: unique.length,
-    skipped: duplicates.length + (rows.length - valid.length),
-  });
 }

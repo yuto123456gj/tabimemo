@@ -5,7 +5,6 @@ import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } fr
 import { Button } from '@/components/ui/Button';
 import {
   IconBook,
-  IconLink,
   IconList,
   IconPin,
   IconSettings,
@@ -118,12 +117,6 @@ export default async function SettingsPage() {
           icon={<IconList width={18} height={18} />}
           label="リスト / タグ"
           value={`${lists.length} / ${tags.length}`}
-        />
-        <SettingsLinkRow
-          href="/places/new?tab=import"
-          icon={<IconLink width={18} height={18} />}
-          label="Googleマップから一括取り込み"
-          description="Google Takeout の GeoJSON / CSV に対応"
         />
       </SettingsGroup>
 
