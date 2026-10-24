@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { APP_NAME_JA } from '@/lib/constants';
 import { GroupSwitcher } from './GroupSwitcher';
 import { ThemeToggle } from './ThemeToggle';
-import { IconBook, IconPin, IconUsers } from '@/components/ui/Icons';
+import { IconBook, IconPin, IconSettings, IconUsers } from '@/components/ui/Icons';
 import type { GroupWithRole } from '@/lib/data/session';
 
 /** 上部バー（スマホではロゴ＋グループ切替、PCではナビも出す） */
@@ -26,7 +26,7 @@ export function TopBar({
           <span className="text-[17px]">{APP_NAME_JA}</span>
         </Link>
 
-        <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="グローバルナビゲーション">
+        <nav className="ml-2 hidden items-center gap-0.5 md:flex lg:ml-4 lg:gap-1" aria-label="グローバルナビゲーション">
           <Link href="/places" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
             <IconPin width={17} height={17} />
             スポット
@@ -38,6 +38,10 @@ export function TopBar({
           <Link href="/groups" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
             <IconUsers width={17} height={17} />
             グループ
+          </Link>
+          <Link href="/settings" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
+            <IconSettings width={17} height={17} />
+            設定
           </Link>
         </nav>
 

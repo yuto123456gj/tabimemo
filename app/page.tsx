@@ -128,7 +128,7 @@ export default async function HomePage() {
                 <EmptyState
                   art="pin"
                   title="最初の1件を保存してみましょう"
-                  description="店名で検索するか、InstagramやTikTokの投稿テキストを貼り付けるだけ。あとでしおりに組み込めます。"
+                  description="店名で検索するか、気になった投稿のリンクを貼って名前を書くだけ。あとでしおりに組み込めます。"
                   action={
                     <ButtonLink href="/places/new">
                       <IconPin width={18} height={18} />

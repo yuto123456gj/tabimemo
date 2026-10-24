@@ -282,7 +282,7 @@ export function PlacesExplorer({
           <EmptyState
             art="pin"
             title="まだスポットがありません"
-            description="行きたいお店や景色を保存すると、ここに並びます。SNSの投稿テキストを貼り付けるだけでも追加できます。"
+            description="行きたいお店や景色を保存すると、ここに並びます。気になった投稿のリンクを貼って名前を書くだけでも追加できます。"
             action={
               <ButtonLink href="/places/new">
                 <IconPin width={18} height={18} />
