@@ -2,15 +2,12 @@ import type { Metadata } from 'next';
 import { ProfileSettings } from '@/components/layout/ProfileSettings';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } from '@/components/layout/SettingsRow';
-import { Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   IconBook,
   IconLink,
   IconList,
-  IconMap,
   IconPin,
-  IconRoute,
   IconSettings,
   IconSparkles,
   IconUsers,
@@ -19,7 +16,6 @@ import { APP_NAME, APP_NAME_JA } from '@/lib/constants';
 import { getActiveGroup, getCurrentUser, getMyGroups, getProfile } from '@/lib/data/session';
 import { countPlaces, listLists, listTags } from '@/lib/data/places';
 import { listTrips } from '@/lib/data/trips';
-import { env, isSupabaseConfigured } from '@/lib/env';
 
 export const metadata: Metadata = { title: '設定' };
 
@@ -140,34 +136,6 @@ export default async function SettingsPage() {
           action={
             <ThemeToggle className="rounded-pill border border-ink-200 p-2.5 text-ink-600 transition hover:bg-ink-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800" />
           }
-        />
-      </SettingsGroup>
-
-      {/* 連携状況 */}
-      <SettingsGroup
-        title="連携状況"
-        footer="いまはすべて無料のサービスで動いています。お店が見つかりにくいと感じたら、Google Places を繋ぐと検索精度が上がり、写真も付くようになります（従量課金）。"
-      >
-        <SettingsInfoRow
-          icon={<IconMap width={18} height={18} />}
-          label="場所検索"
-          value={<Badge tone="brand">{env.googlePlacesKey ? 'Google Places' : 'OpenStreetMap'}</Badge>}
-          description={
-            env.googlePlacesKey
-              ? 'Googleの地図データで検索しています'
-              : '無料のOpenStreetMapで検索しています。個人店や新しいお店は見つからないことがあります'
-          }
-        />
-        <SettingsInfoRow
-          icon={<IconRoute width={18} height={18} />}
-          label="ルート計算"
-          value={<Badge tone="brand">OSRM</Badge>}
-          description="取得できない時は直線距離で計算します"
-        />
-        <SettingsInfoRow
-          icon={<IconSettings width={18} height={18} />}
-          label="データベース"
-          value={<Badge tone={isSupabaseConfigured() ? 'accent' : 'neutral'}>{isSupabaseConfigured() ? '接続中' : '未設定'}</Badge>}
         />
       </SettingsGroup>
 
