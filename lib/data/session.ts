@@ -115,13 +115,30 @@ export async function requireContext() {
 export async function getGroupMembers(groupId: string) {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+
+  // group_members.user_id は auth.users を参照しているため profiles を直接
+  // 埋め込めない（外部キーが無くクエリ全体がエラーになる）。2回に分けて取る。
+  const { data: members, error } = await supabase
     .from('group_members')
-    .select('user_id, role, created_at, profiles(id, display_name, avatar_url)')
+    .select('user_id, role, created_at')
     .eq('group_id', groupId);
 
-  return (data ?? []).map((row) => {
-    const profile = row.profiles as unknown as Pick<Profile, 'id' | 'display_name' | 'avatar_url'> | null;
+  if (error || !members) {
+    if (error) console.error('[getGroupMembers] 取得に失敗しました:', error.message);
+    return [];
+  }
+
+  const ids = members.map((m) => m.user_id as string);
+  const { data: profiles } = ids.length
+    ? await supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids)
+    : { data: [] };
+
+  const byId = new Map(
+    ((profiles ?? []) as Pick<Profile, 'id' | 'display_name' | 'avatar_url'>[]).map((p) => [p.id, p]),
+  );
+
+  return members.map((row) => {
+    const profile = byId.get(row.user_id as string);
     return {
       user_id: row.user_id as string,
       role: row.role as string,

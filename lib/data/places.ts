@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
 import type { PlaceWithExtras, PlaceList, Tag } from '@/types/database';
@@ -12,13 +13,38 @@ export interface PlaceFilters {
   sort?: 'created' | 'planned' | 'rating' | 'name';
 }
 
+/**
+ * places を取るときの共通SELECT。
+ *
+ * 注意: added_by は auth.users を参照しているため、PostgREST では
+ * profiles を直接埋め込めない（外部キーが無くクエリ全体がエラーになる）。
+ * 「誰が追加したか」は attachAddedBy() で別途ひもづける。
+ */
 const SELECT = `
   *,
   place_reviews(*),
   place_tags(tag_id, tags(id, group_id, name, created_at)),
-  list_places(list_id),
-  profiles:added_by(id, display_name, avatar_url)
+  list_places(list_id)
 `;
+
+/** 追加した人のプロフィールを、まとめて1回の問い合わせでひもづける */
+async function attachAddedBy(
+  supabase: SupabaseClient,
+  places: PlaceWithExtras[],
+): Promise<PlaceWithExtras[]> {
+  const ids = Array.from(new Set(places.map((p) => p.added_by).filter((id): id is string => Boolean(id))));
+  if (ids.length === 0) return places;
+
+  const { data } = await supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids);
+  const byId = new Map(
+    ((data ?? []) as { id: string; display_name: string | null; avatar_url: string | null }[]).map((p) => [p.id, p]),
+  );
+
+  return places.map((p) => ({
+    ...p,
+    profiles: p.added_by ? (byId.get(p.added_by) ?? null) : null,
+  }));
+}
 
 export async function listPlaces(groupId: string, filters: PlaceFilters = {}): Promise<PlaceWithExtras[]> {
   if (!isSupabaseConfigured()) return [];
@@ -42,9 +68,13 @@ export async function listPlaces(groupId: string, filters: PlaceFilters = {}): P
   }
 
   const { data, error } = await query.limit(500);
-  if (error || !data) return [];
+  if (error || !data) {
+    // 握りつぶすと「0件」と区別がつかなくなるのでログに残す
+    if (error) console.error('[listPlaces] 取得に失敗しました:', error.message);
+    return [];
+  }
 
-  let places = data as unknown as PlaceWithExtras[];
+  let places = await attachAddedBy(supabase, data as unknown as PlaceWithExtras[]);
 
   // 結合先での絞り込みはクライアント側で行う（RLS下でのJOINフィルタを単純に保つため）
   if (filters.tagId) {
@@ -70,8 +100,15 @@ export async function listPlaces(groupId: string, filters: PlaceFilters = {}): P
 export async function getPlace(placeId: string): Promise<PlaceWithExtras | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from('places').select(SELECT).eq('id', placeId).maybeSingle();
-  return (data as unknown as PlaceWithExtras | null) ?? null;
+  const { data, error } = await supabase.from('places').select(SELECT).eq('id', placeId).maybeSingle();
+  if (error) {
+    console.error('[getPlace] 取得に失敗しました:', error.message);
+    return null;
+  }
+  if (!data) return null;
+
+  const [place] = await attachAddedBy(supabase, [data as unknown as PlaceWithExtras]);
+  return place ?? null;
 }
 
 export async function listTags(groupId: string): Promise<Tag[]> {
@@ -108,7 +145,7 @@ export async function recentPlaces(groupId: string, limit = 6): Promise<PlaceWit
     .eq('group_id', groupId)
     .order('created_at', { ascending: false })
     .limit(limit);
-  return (data as unknown as PlaceWithExtras[] | null) ?? [];
+  return attachAddedBy(supabase, (data as unknown as PlaceWithExtras[] | null) ?? []);
 }
 
 export async function countPlaces(groupId: string) {
