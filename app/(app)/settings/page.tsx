@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { AvatarSettings } from '@/components/layout/AvatarSettings';
 import { ProfileSettings } from '@/components/layout/ProfileSettings';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { Avatar } from '@/components/ui/Avatar';
 import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } from '@/components/layout/SettingsRow';
 import { Button } from '@/components/ui/Button';
 import {
@@ -36,15 +38,12 @@ export default async function SettingsPage() {
     : [{ want: 0, visited: 0 }, [], [], []];
 
   const displayName = profile?.display_name ?? 'たびびと';
-  const initial = displayName.slice(0, 1);
 
   return (
     <div className="space-y-6">
       {/* プロフィールヘッダー */}
       <section className="flex items-center gap-4">
-        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-brand-gradient text-2xl font-extrabold text-white shadow-lift">
-          {initial}
-        </span>
+        <Avatar name={displayName} avatarUrl={profile?.avatar_url ?? null} size={64} className="shadow-lift" />
         <div className="min-w-0">
           <h1 className="truncate text-xl font-extrabold tracking-tight text-ink-900 dark:text-white">
             {displayName}
@@ -71,6 +70,16 @@ export default async function SettingsPage() {
 
       {/* アカウント */}
       <SettingsGroup title="アカウント">
+        <li className="px-4 py-3.5">
+          <p className="label">アイコン</p>
+          {user && (
+            <AvatarSettings
+              name={displayName}
+              currentAvatar={profile?.avatar_url ?? null}
+              userId={user.id}
+            />
+          )}
+        </li>
         <li className="px-4 py-3.5">
           <ProfileSettings initialName={profile?.display_name ?? ''} />
         </li>

@@ -180,6 +180,31 @@ export async function removeMember(groupId: string, userId: string): Promise<Act
   return succeed();
 }
 
+/**
+ * アカウントのアイコンを変更する。
+ * value には画像のURLか絵文字1文字を渡す。null で頭文字に戻る。
+ */
+export async function updateAvatar(value: string | null): Promise<ActionResult> {
+  const ctx = await requireUser();
+  if (!ctx.ok) return fail(ctx.error);
+
+  const cleaned = value?.trim() || null;
+  if (cleaned && cleaned.length > 500) return fail('アイコンの指定が長すぎます。');
+  if (cleaned && !/^https?:\/\//.test(cleaned) && Array.from(cleaned).length > 2) {
+    return fail('絵文字は1文字だけ選んでください。');
+  }
+
+  const { error } = await ctx.supabase
+    .from('profiles')
+    .upsert({ id: ctx.user.id, avatar_url: cleaned }, { onConflict: 'id' });
+
+  if (error) return fail(error.message);
+
+  revalidatePath('/settings');
+  revalidatePath('/', 'layout');
+  return succeed();
+}
+
 export async function updateDisplayName(name: string): Promise<ActionResult> {
   const ctx = await requireUser();
   if (!ctx.ok) return fail(ctx.error);

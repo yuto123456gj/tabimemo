@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge, Card } from '@/components/ui/Card';
 import { Notice, Spinner } from '@/components/ui/Feedback';
 import { IconPlus, IconTrash, IconUsers } from '@/components/ui/Icons';
@@ -134,9 +135,7 @@ export function GroupManager({
               <ul className="mt-2 space-y-1.5">
                 {members.map((m) => (
                   <li key={m.user_id} className="flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-200">
-                      {(m.display_name ?? 'M').slice(0, 1)}
-                    </span>
+                    <Avatar name={m.display_name} avatarUrl={m.avatar_url} size={32} />
                     <span className="min-w-0 flex-1 truncate text-sm">
                       {m.display_name}
                       {m.user_id === currentUserId && <span className="ml-1 text-xs text-ink-400">（自分）</span>}
