@@ -58,7 +58,7 @@ export const getMyGroups = cache(async (): Promise<GroupWithRole[]> => {
 
   const { data, error } = await supabase
     .from('group_members')
-    .select('role, groups(id, name, created_by, created_at)')
+    .select('role, groups(id, name, created_by, created_at, join_code)')
     .eq('user_id', user.id);
 
   if (error || !data) return [];

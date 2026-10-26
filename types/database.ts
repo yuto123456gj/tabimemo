@@ -18,6 +18,8 @@ export interface Group {
   name: string;
   created_by: string | null;
   created_at: string;
+  /** 合言葉（8文字）。これを伝えればグループに参加してもらえる */
+  join_code: string;
 }
 
 export interface GroupMember {

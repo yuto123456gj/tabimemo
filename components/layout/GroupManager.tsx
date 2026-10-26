@@ -12,6 +12,7 @@ import {
   deleteGroup,
   leaveGroup,
   removeMember,
+  regenerateJoinCode,
   renameGroup,
   revokeInvite,
   switchGroup,
@@ -190,6 +191,45 @@ export function GroupManager({
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* 合言葉 */}
+            <div className="mt-4 rounded-xl bg-sky-gradient p-3 dark:bg-ink-800">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">
+                合言葉
+              </h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-500 dark:text-ink-400">
+                この8文字を相手に伝えてください。相手はログイン後、「合言葉で参加する」に入力するだけです。
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <code className="select-all rounded-lg bg-white px-3 py-2 font-mono text-xl font-bold tracking-[0.25em] text-brand-600 dark:bg-ink-900 dark:text-brand-300">
+                  {group.join_code}
+                </code>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(group.join_code)
+                      .then(() => {
+                        setCopied(group.join_code);
+                        window.setTimeout(() => setCopied(null), 2000);
+                      })
+                      .catch(() => setError(`コピーできませんでした: ${group.join_code}`));
+                  }}
+                >
+                  {copied === group.join_code ? 'コピーしました' : '合言葉をコピー'}
+                </Button>
+                {isOwner && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={pending}
+                    onClick={() => run(() => regenerateJoinCode(group.id), '合言葉を作り直しました')}
+                  >
+                    作り直す
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* 招待リンク */}

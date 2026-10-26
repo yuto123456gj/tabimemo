@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { GroupManager, type GroupDetail } from '@/components/layout/GroupManager';
+import { JoinByCode } from '@/components/layout/JoinByCode';
 import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -46,6 +47,8 @@ export default async function GroupsPage() {
           リストは「グループ」ごとに保存されます。招待リンクを送れば、相手の画面にもすぐ反映されます。
         </p>
       </div>
+
+      <JoinByCode />
 
       {groups.length === 0 && (
         <EmptyState

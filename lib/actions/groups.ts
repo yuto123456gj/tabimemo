@@ -115,6 +115,63 @@ export async function acceptInvite(token: string): Promise<ActionResult<{ groupI
   return succeed({ groupId: row.group_id, groupName: row.group_name ?? 'グループ' });
 }
 
+/** 合言葉を入力してグループに参加する */
+export async function joinByCode(
+  code: string,
+): Promise<ActionResult<{ groupId: string; groupName: string; alreadyMember: boolean }>> {
+  const ctx = await requireUser();
+  if (!ctx.ok) return fail(ctx.error);
+
+  const normalized = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (normalized.length !== 8) {
+    return fail('合言葉は8文字です。入力を確認してください（ハイフンや空白は入れても大丈夫です）。');
+  }
+
+  const { data, error } = await ctx.supabase.rpc('join_group_by_code', { code: normalized });
+
+  if (error) {
+    const messages: Record<string, string> = {
+      CODE_INVALID: '合言葉の形式が正しくありません。8文字で入力してください。',
+      CODE_NOT_FOUND: 'その合言葉のグループは見つかりませんでした。打ち間違いがないか確認してください。',
+      AUTH_REQUIRED: 'ログインが必要です。',
+    };
+    const key = Object.keys(messages).find((k) => error.message.includes(k));
+    return fail(key ? messages[key] : error.message);
+  }
+
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { group_id?: string; group_name?: string; already_member?: boolean }
+    | null;
+
+  if (!row?.group_id) return fail('グループに参加できませんでした。');
+
+  const cookieStore = await cookies();
+  cookieStore.set(ACTIVE_GROUP_COOKIE, row.group_id, { path: '/', maxAge: ONE_YEAR, sameSite: 'lax' });
+
+  revalidatePath('/', 'layout');
+  return succeed({
+    groupId: row.group_id,
+    groupName: row.group_name ?? 'グループ',
+    alreadyMember: Boolean(row.already_member),
+  });
+}
+
+/** 合言葉を作り直す（漏れた時用。オーナーのみ） */
+export async function regenerateJoinCode(groupId: string): Promise<ActionResult<string>> {
+  const ctx = await requireUser();
+  if (!ctx.ok) return fail(ctx.error);
+
+  const { data, error } = await ctx.supabase.rpc('regenerate_join_code', { target_group_id: groupId });
+  if (error) {
+    if (error.message.includes('NOT_OWNER')) return fail('合言葉を作り直せるのはオーナーだけです。');
+    return fail(error.message);
+  }
+
+  const row = (Array.isArray(data) ? data[0] : data) as { join_code?: string } | null;
+  revalidatePath('/groups');
+  return succeed(row?.join_code ?? '');
+}
+
 export async function leaveGroup(groupId: string): Promise<ActionResult> {
   const ctx = await requireUser();
   if (!ctx.ok) return fail(ctx.error);

@@ -48,7 +48,9 @@
 - 地図のピンをタップすると詳細カードが出ます
 
 ### グループで共有
-- グループを作って、招待リンク（有効期限つき・無効化可）で招待
+- **合言葉で参加**: 各グループに8文字の合言葉があり、相手に伝えるだけで参加できます
+  （ログイン後にアプリ内で入力する方式なので、リンクのリダイレクトで失敗しません）
+- 招待リンク（有効期限つき・無効化可）でも招待できます
 - 誰かが追加・編集すると、Supabase Realtime で相手の画面にすぐ反映
 - 「誰が追加したか」を表示
 
@@ -157,6 +159,8 @@ http://localhost:3000 を開いてください。
    2. `supabase/migrations/0002_rls.sql` … Row Level Security と RPC
    3. `supabase/migrations/0003_storage.sql` … 写真用のStorageバケット
    4. `supabase/migrations/0004_optional_location.sql` … 座標を後から設定できるようにする
+   5. `supabase/migrations/0005_fix_accept_invite.sql` … 招待受け入れの不具合修正
+   6. `supabase/migrations/0006_join_code.sql` … 合言葉での参加
 3. エラーが出ないことを確認します（何度流しても安全なように書いてあります）
 
 ### 方法B: Supabase CLI から
