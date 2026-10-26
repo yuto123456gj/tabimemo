@@ -1,6 +1,41 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
+import { ACTIVE_GROUP_COOKIE, PENDING_INVITE_COOKIE } from '@/lib/data/session';
+
+type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+/**
+ * ログイン前に招待リンクを踏んでいたら、ここで自動的に参加させる。
+ * OAuthの行き帰りでクエリが失われても確実に参加できるようにするため。
+ */
+async function acceptPendingInvite(
+  supabase: Supabase,
+  request: NextRequest,
+  response: NextResponse,
+): Promise<void> {
+  const token = request.cookies.get(PENDING_INVITE_COOKIE)?.value;
+  if (!token) return;
+
+  // 成否にかかわらず、この招待Cookieは使い切る
+  response.cookies.set(PENDING_INVITE_COOKIE, '', { path: '/', maxAge: 0 });
+
+  const { data, error } = await supabase.rpc('accept_group_invite', { invite_token: token });
+  if (error) {
+    console.error('[auth/callback] 招待の自動参加に失敗しました:', error.message);
+    return;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (row?.group_id) {
+    // 参加したグループをそのまま表示対象にする
+    response.cookies.set(ACTIVE_GROUP_COOKIE, row.group_id, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+    });
+  }
+}
 
 /**
  * Supabaseからの英語エラーを、原因と対処が分かる日本語にする。
@@ -48,7 +83,10 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return failTo(friendlyMessage(error.message));
-    return NextResponse.redirect(`${origin}${next}`);
+
+    const response = NextResponse.redirect(`${origin}${next}`);
+    await acceptPendingInvite(supabase, request, response);
+    return response;
   }
 
   const tokenHash = searchParams.get('token_hash');
@@ -59,7 +97,10 @@ export async function GET(request: NextRequest) {
       token_hash: tokenHash,
     });
     if (error) return failTo(friendlyMessage(error.message));
-    return NextResponse.redirect(`${origin}${next}`);
+
+    const response = NextResponse.redirect(`${origin}${next}`);
+    await acceptPendingInvite(supabase, request, response);
+    return response;
   }
 
   return failTo('ログイン情報を確認できませんでした。もう一度お試しください。');

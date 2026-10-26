@@ -6,7 +6,16 @@ import { Button } from '@/components/ui/Button';
 import { Badge, Card } from '@/components/ui/Card';
 import { Notice, Spinner } from '@/components/ui/Feedback';
 import { IconLink, IconPlus, IconTrash, IconUsers } from '@/components/ui/Icons';
-import { createGroup, createInvite, leaveGroup, removeMember, renameGroup, revokeInvite, switchGroup } from '@/lib/actions/groups';
+import {
+  createGroup,
+  createInvite,
+  deleteGroup,
+  leaveGroup,
+  removeMember,
+  renameGroup,
+  revokeInvite,
+  switchGroup,
+} from '@/lib/actions/groups';
 import { formatJaDate } from '@/lib/utils/date';
 import { cn } from '@/lib/utils/cn';
 import type { GroupWithRole } from '@/lib/data/session';
@@ -34,6 +43,7 @@ export function GroupManager({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, success?: string) => {
@@ -236,8 +246,8 @@ export function GroupManager({
               )}
             </div>
 
-            {details.length > 1 && (
-              <div className="mt-4 border-t border-ink-100 pt-3 dark:border-ink-800">
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-3 dark:border-ink-800">
+              {members.length > 1 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -247,8 +257,47 @@ export function GroupManager({
                 >
                   このグループから抜ける
                 </Button>
-              </div>
-            )}
+              )}
+
+              {isOwner &&
+                (confirmingDelete === group.id ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-red-600 dark:text-red-400">
+                      「{group.name}」の中のスポットとしおりも、すべて消えます。戻せません。
+                    </span>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => {
+                        setConfirmingDelete(null);
+                        run(() => deleteGroup(group.id), 'グループを削除しました');
+                      }}
+                    >
+                      完全に削除する
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(null)}>
+                      やめる
+                    </Button>
+                  </span>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500"
+                    disabled={pending}
+                    onClick={() => setConfirmingDelete(group.id)}
+                  >
+                    グループを削除
+                  </Button>
+                ))}
+
+              {members.length === 1 && !isOwner && (
+                <p className="text-xs text-ink-400">
+                  あなたが最後のメンバーのため、抜けることはできません。
+                </p>
+              )}
+            </div>
           </Card>
         );
       })}

@@ -6,6 +6,9 @@ import type { Group, Profile } from '@/types/database';
 
 export const ACTIVE_GROUP_COOKIE = 'tabimemo_group';
 
+/** ログインを挟んでも「どの招待に参加しようとしていたか」を覚えておくCookie名 */
+export const PENDING_INVITE_COOKIE = 'tabimemo_pending_invite';
+
 export interface GroupWithRole extends Group {
   role: string;
   member_count: number;

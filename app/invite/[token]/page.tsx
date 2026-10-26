@@ -82,7 +82,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                   <AcceptInvite token={token} groupName={groupName ?? 'グループ'} />
                 ) : (
                   <>
-                    <ButtonLink href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`} size="lg" className="w-full">
+                    <ButtonLink href={`/invite/${token}/join`} size="lg" className="w-full">
                       ログインして参加する
                     </ButtonLink>
                     <p className="mt-3 text-xs leading-relaxed text-ink-400">

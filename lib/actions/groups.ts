@@ -115,6 +115,21 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
   const ctx = await requireUser();
   if (!ctx.ok) return fail(ctx.error);
 
+  // 最後の1人が抜けると、中のスポットやしおりに誰もアクセスできなくなる。
+  // 取り残しを防ぐため、最後のメンバーは抜けられないようにする。
+  const { data: members } = await ctx.supabase
+    .from('group_members')
+    .select('user_id')
+    .eq('group_id', groupId);
+
+  if ((members?.length ?? 0) <= 1) {
+    return fail(
+      'あなたが最後のメンバーのため、このグループからは抜けられません。' +
+        '中のスポットやしおりが誰からも見られなくなってしまうためです。' +
+        '不要な場合は、先に他のメンバーを招待するか、グループごと削除してください。',
+    );
+  }
+
   const { error } = await ctx.supabase
     .from('group_members')
     .delete()
@@ -128,6 +143,23 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
     cookieStore.delete(ACTIVE_GROUP_COOKIE);
   }
   revalidatePath('/groups');
+  return succeed();
+}
+
+/** グループごと削除する（中のスポット・しおりも一緒に消える） */
+export async function deleteGroup(groupId: string): Promise<ActionResult> {
+  const ctx = await requireUser();
+  if (!ctx.ok) return fail(ctx.error);
+
+  const { error } = await ctx.supabase.from('groups').delete().eq('id', groupId);
+  if (error) return fail(error.message);
+
+  const cookieStore = await cookies();
+  if (cookieStore.get(ACTIVE_GROUP_COOKIE)?.value === groupId) {
+    cookieStore.delete(ACTIVE_GROUP_COOKIE);
+  }
+  revalidatePath('/groups');
+  revalidatePath('/', 'layout');
   return succeed();
 }
 
