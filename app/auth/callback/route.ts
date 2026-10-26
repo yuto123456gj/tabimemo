@@ -22,11 +22,17 @@ async function acceptPendingInvite(
 
   const { data, error } = await supabase.rpc('accept_group_invite', { invite_token: token });
   if (error) {
+    // 失敗を黙って握りつぶすと「なぜか入れない」状態になるので画面にも出す
     console.error('[auth/callback] 招待の自動参加に失敗しました:', error.message);
+    response.cookies.set('tabimemo_invite_error', error.message.slice(0, 200), {
+      path: '/',
+      maxAge: 60,
+      sameSite: 'lax',
+    });
     return;
   }
 
-  const row = Array.isArray(data) ? data[0] : data;
+  const row = (Array.isArray(data) ? data[0] : data) as { group_id?: string } | null;
   if (row?.group_id) {
     // 参加したグループをそのまま表示対象にする
     response.cookies.set(ACTIVE_GROUP_COOKIE, row.group_id, {

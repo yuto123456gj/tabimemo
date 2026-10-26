@@ -101,14 +101,18 @@ export async function acceptInvite(token: string): Promise<ActionResult<{ groupI
     return fail(key ? messages[key] : error.message);
   }
 
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return fail('グループに参加できませんでした。');
+  // RPC は { group_id, group_name, already_member } の jsonb を返す
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { group_id?: string; group_name?: string; already_member?: boolean }
+    | null;
+
+  if (!row?.group_id) return fail('グループに参加できませんでした。');
 
   const cookieStore = await cookies();
   cookieStore.set(ACTIVE_GROUP_COOKIE, row.group_id, { path: '/', maxAge: ONE_YEAR, sameSite: 'lax' });
 
   revalidatePath('/', 'layout');
-  return succeed({ groupId: row.group_id as string, groupName: row.group_name as string });
+  return succeed({ groupId: row.group_id, groupName: row.group_name ?? 'グループ' });
 }
 
 export async function leaveGroup(groupId: string): Promise<ActionResult> {

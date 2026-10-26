@@ -4,6 +4,7 @@ import { AcceptInvite } from '@/components/layout/AcceptInvite';
 import { Notice } from '@/components/ui/Feedback';
 import { ButtonLink } from '@/components/ui/Button';
 import { APP_NAME_JA } from '@/lib/constants';
+import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/data/session';
 import { isSupabaseConfigured } from '@/lib/env';
@@ -19,6 +20,7 @@ const REASONS: Record<string, string> = {
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const user = await getCurrentUser();
+  const autoJoinError = (await cookies()).get('tabimemo_invite_error')?.value ?? null;
 
   let groupName: string | null = null;
   let valid = false;
@@ -76,6 +78,13 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               <p className="mt-2 text-sm leading-relaxed text-ink-500 dark:text-ink-400">
                 参加すると、みんなで保存した行きたい場所と旅のしおりを一緒に編集できます。
               </p>
+
+              {autoJoinError && (
+                <Notice tone="error" className="mt-4 text-left">
+                  自動で参加できませんでした。下のボタンから参加してください。
+                  <span className="mt-1 block font-mono text-[10px] opacity-70">{autoJoinError}</span>
+                </Notice>
+              )}
 
               <div className="mt-6">
                 {user ? (
