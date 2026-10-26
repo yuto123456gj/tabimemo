@@ -5,39 +5,33 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Badge, Card } from '@/components/ui/Card';
 import { Notice, Spinner } from '@/components/ui/Feedback';
-import { IconLink, IconPlus, IconTrash, IconUsers } from '@/components/ui/Icons';
+import { IconPlus, IconTrash, IconUsers } from '@/components/ui/Icons';
 import {
   createGroup,
-  createInvite,
   deleteGroup,
   leaveGroup,
   removeMember,
   regenerateJoinCode,
   renameGroup,
-  revokeInvite,
   switchGroup,
 } from '@/lib/actions/groups';
 import { formatJaDate } from '@/lib/utils/date';
 import { cn } from '@/lib/utils/cn';
 import type { GroupWithRole } from '@/lib/data/session';
-import type { GroupInvite } from '@/types/database';
 
 export interface GroupDetail {
   group: GroupWithRole;
   members: Array<{ user_id: string; role: string; display_name: string; avatar_url: string | null }>;
-  invites: GroupInvite[];
 }
 
 export function GroupManager({
   details,
   activeGroupId,
   currentUserId,
-  siteUrl,
 }: {
   details: GroupDetail[];
   activeGroupId: string | null;
   currentUserId: string | null;
-  siteUrl: string;
 }) {
   const router = useRouter();
   const [newName, setNewName] = useState('');
@@ -59,32 +53,6 @@ export function GroupManager({
       if (success) setMessage(success);
       router.refresh();
     });
-  };
-
-  const inviteUrl = (token: string) => `${siteUrl}/invite/${token}`;
-
-  const copy = async (token: string) => {
-    const url = inviteUrl(token);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(token);
-      window.setTimeout(() => setCopied(null), 2000);
-    } catch {
-      setError(`コピーできませんでした。このURLを手動でコピーしてください: ${url}`);
-    }
-  };
-
-  const share = async (token: string, groupName: string) => {
-    const url = inviteUrl(token);
-    if (typeof navigator !== 'undefined' && 'share' in navigator) {
-      try {
-        await navigator.share({ title: `${groupName} に招待`, text: '一緒に行きたい場所を貯めよう', url });
-        return;
-      } catch {
-        // キャンセルされた場合はコピーにフォールバック
-      }
-    }
-    await copy(token);
   };
 
   return (
@@ -124,12 +92,9 @@ export function GroupManager({
       </Card>
 
       {/* グループ一覧 */}
-      {details.map(({ group, members, invites }) => {
+      {details.map(({ group, members }) => {
         const isOwner = group.role === 'owner';
         const isActive = group.id === activeGroupId;
-        const liveInvites = invites.filter(
-          (i) => !i.revoked && (!i.expires_at || new Date(i.expires_at) > new Date()),
-        );
 
         return (
           <Card key={group.id} className={cn(isActive && 'ring-2 ring-brand-300 dark:ring-brand-700')}>
@@ -230,60 +195,6 @@ export function GroupManager({
                   </Button>
                 )}
               </div>
-            </div>
-
-            {/* 招待リンク */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-ink-400">招待リンク</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pending}
-                  onClick={() => run(() => createInvite(group.id, 14), '招待リンクを作りました（14日間有効）')}
-                >
-                  <IconLink width={16} height={16} />
-                  発行する
-                </Button>
-              </div>
-
-              {liveInvites.length === 0 ? (
-                <p className="mt-2 text-xs text-ink-400">
-                  有効な招待リンクはありません。「発行する」を押すと、14日間使えるリンクができます。
-                </p>
-              ) : (
-                <ul className="mt-2 space-y-2">
-                  {liveInvites.map((invite) => (
-                    <li key={invite.id} className="rounded-xl bg-ink-50 p-2.5 dark:bg-ink-800">
-                      <p className="break-all font-mono text-[11px] text-ink-500 dark:text-ink-400">
-                        {inviteUrl(invite.token)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Button size="sm" onClick={() => share(invite.token, group.name)}>
-                          {copied === invite.token ? 'コピーしました' : '共有する'}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => copy(invite.token)}>
-                          URLをコピー
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500"
-                          disabled={pending}
-                          onClick={() => run(() => revokeInvite(invite.id), '招待リンクを無効化しました')}
-                        >
-                          無効にする
-                        </Button>
-                        {invite.expires_at && (
-                          <span className="text-[11px] text-ink-400">
-                            {formatJaDate(invite.expires_at)}まで
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-3 dark:border-ink-800">

@@ -2,7 +2,6 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { requireUser } from './session';
 import { ACTIVE_GROUP_COOKIE } from '@/lib/data/session';
 import { fail, succeed, type ActionResult } from './types';
@@ -55,64 +54,6 @@ export async function switchGroup(groupId: string): Promise<ActionResult> {
   cookieStore.set(ACTIVE_GROUP_COOKIE, groupId, { path: '/', maxAge: ONE_YEAR, sameSite: 'lax' });
   revalidatePath('/', 'layout');
   return succeed();
-}
-
-/** 招待リンクを発行する */
-export async function createInvite(groupId: string, days = 14): Promise<ActionResult<string>> {
-  const ctx = await requireUser();
-  if (!ctx.ok) return fail(ctx.error);
-
-  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await ctx.supabase
-    .from('group_invites')
-    .insert({ group_id: groupId, created_by: ctx.user.id, expires_at: expiresAt })
-    .select('token')
-    .single();
-
-  if (error || !data) return fail(error?.message ?? '招待リンクを作成できませんでした。');
-  revalidatePath('/groups');
-  return succeed(data.token as string);
-}
-
-export async function revokeInvite(inviteId: string): Promise<ActionResult> {
-  const ctx = await requireUser();
-  if (!ctx.ok) return fail(ctx.error);
-
-  const { error } = await ctx.supabase.from('group_invites').update({ revoked: true }).eq('id', inviteId);
-  if (error) return fail(error.message);
-  revalidatePath('/groups');
-  return succeed();
-}
-
-/** 招待リンクを受け入れる（RPC経由。RLSは緩めない） */
-export async function acceptInvite(token: string): Promise<ActionResult<{ groupId: string; groupName: string }>> {
-  const ctx = await requireUser();
-  if (!ctx.ok) return fail(ctx.error);
-
-  const { data, error } = await ctx.supabase.rpc('accept_group_invite', { invite_token: token });
-  if (error) {
-    const messages: Record<string, string> = {
-      INVITE_NOT_FOUND: 'この招待リンクは見つかりませんでした。',
-      INVITE_REVOKED: 'この招待リンクは無効化されています。',
-      INVITE_EXPIRED: 'この招待リンクは有効期限が切れています。',
-      AUTH_REQUIRED: 'ログインが必要です。',
-    };
-    const key = Object.keys(messages).find((k) => error.message.includes(k));
-    return fail(key ? messages[key] : error.message);
-  }
-
-  // RPC は { group_id, group_name, already_member } の jsonb を返す
-  const row = (Array.isArray(data) ? data[0] : data) as
-    | { group_id?: string; group_name?: string; already_member?: boolean }
-    | null;
-
-  if (!row?.group_id) return fail('グループに参加できませんでした。');
-
-  const cookieStore = await cookies();
-  cookieStore.set(ACTIVE_GROUP_COOKIE, row.group_id, { path: '/', maxAge: ONE_YEAR, sameSite: 'lax' });
-
-  revalidatePath('/', 'layout');
-  return succeed({ groupId: row.group_id, groupName: row.group_name ?? 'グループ' });
 }
 
 /** 合言葉を入力してグループに参加する */
@@ -251,11 +192,4 @@ export async function updateDisplayName(name: string): Promise<ActionResult> {
   if (error) return fail(error.message);
   revalidatePath('/settings');
   return succeed();
-}
-
-/** 招待リンクを開いた直後の遷移用 */
-export async function acceptInviteAndGo(token: string) {
-  const result = await acceptInvite(token);
-  if (result.ok) redirect('/places');
-  return result;
 }

@@ -3,10 +3,8 @@ import { GroupManager, type GroupDetail } from '@/components/layout/GroupManager
 import { JoinByCode } from '@/components/layout/JoinByCode';
 import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getActiveGroup, getCurrentUser, getGroupMembers, getMyGroups } from '@/lib/data/session';
-import { env, isSupabaseConfigured } from '@/lib/env';
-import type { GroupInvite } from '@/types/database';
+import { isSupabaseConfigured } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'グループ' };
 
@@ -15,25 +13,9 @@ export default async function GroupsPage() {
 
   const details: GroupDetail[] = [];
 
-  if (isSupabaseConfigured() && groups.length > 0) {
-    const supabase = await createSupabaseServerClient();
-    const { data: invitesRaw } = await supabase
-      .from('group_invites')
-      .select('*')
-      .in(
-        'group_id',
-        groups.map((g) => g.id),
-      )
-      .order('created_at', { ascending: false });
-
-    const invites = (invitesRaw as GroupInvite[] | null) ?? [];
-
+  if (isSupabaseConfigured()) {
     for (const group of groups) {
-      details.push({
-        group,
-        members: await getGroupMembers(group.id),
-        invites: invites.filter((i) => i.group_id === group.id),
-      });
+      details.push({ group, members: await getGroupMembers(group.id) });
     }
   }
 
@@ -44,7 +26,7 @@ export default async function GroupsPage() {
       <div>
         <h1 className="text-xl font-extrabold tracking-tight text-ink-900 dark:text-white">グループ</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
-          リストは「グループ」ごとに保存されます。招待リンクを送れば、相手の画面にもすぐ反映されます。
+          リストは「グループ」ごとに保存されます。合言葉を伝えれば、相手の画面にもすぐ反映されます。
         </p>
       </div>
 
@@ -58,12 +40,7 @@ export default async function GroupsPage() {
         />
       )}
 
-      <GroupManager
-        details={details}
-        activeGroupId={activeGroup?.id ?? null}
-        currentUserId={user?.id ?? null}
-        siteUrl={env.siteUrl}
-      />
+      <GroupManager details={details} activeGroupId={activeGroup?.id ?? null} currentUserId={user?.id ?? null} />
     </div>
   );
 }

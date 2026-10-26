@@ -48,9 +48,8 @@
 - 地図のピンをタップすると詳細カードが出ます
 
 ### グループで共有
-- **合言葉で参加**: 各グループに8文字の合言葉があり、相手に伝えるだけで参加できます
-  （ログイン後にアプリ内で入力する方式なので、リンクのリダイレクトで失敗しません）
-- 招待リンク（有効期限つき・無効化可）でも招待できます
+- **合言葉で参加**: 各グループに8文字の合言葉があり、相手に伝えるだけで参加できます。
+  ログイン後にアプリ内で入力する方式なので、メールやリンクのリダイレクトで失敗しません
 - 誰かが追加・編集すると、Supabase Realtime で相手の画面にすぐ反映
 - 「誰が追加したか」を表示
 
@@ -161,6 +160,7 @@ http://localhost:3000 を開いてください。
    4. `supabase/migrations/0004_optional_location.sql` … 座標を後から設定できるようにする
    5. `supabase/migrations/0005_fix_accept_invite.sql` … 招待受け入れの不具合修正
    6. `supabase/migrations/0006_join_code.sql` … 合言葉での参加
+   7. `supabase/migrations/0007_drop_invites.sql` … 招待リンクの後片付け（任意）
 3. エラーが出ないことを確認します（何度流しても安全なように書いてあります）
 
 ### 方法B: Supabase CLI から
@@ -177,7 +177,7 @@ supabase db push
 | テーブル | 役割 |
 | --- | --- |
 | `profiles` | 表示名・アバター（`auth.users` と1:1） |
-| `groups` / `group_members` / `group_invites` | グループと招待 |
+| `groups` / `group_members` | グループ（`groups.join_code` が合言葉） |
 | `places` | 保存したスポット |
 | `place_reviews` | 「行った」記録（**メンバーごと**） |
 | `lists` / `list_places` | リスト（多対多） |
@@ -301,7 +301,6 @@ app/
     health                  設定状況の確認
   auth/callback             OAuth / マジックリンクの着地点
   s/[token]                 しおりの共有閲覧ページ（ログイン不要・印刷対応）
-  invite/[token]            招待の受け入れ
   login/  layout.tsx  page.tsx（LP or ホーム）
 
 components/

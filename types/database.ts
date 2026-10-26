@@ -29,16 +29,6 @@ export interface GroupMember {
   created_at: string;
 }
 
-export interface GroupInvite {
-  id: string;
-  group_id: string;
-  token: string;
-  created_by: string | null;
-  expires_at: string | null;
-  revoked: boolean;
-  created_at: string;
-}
-
 export interface Place {
   id: string;
   group_id: string;

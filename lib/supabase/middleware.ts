@@ -5,7 +5,7 @@ import { isSupabaseConfigured, supabaseCredentials } from '@/lib/env';
 /** ログイン必須のパス（prefix 一致） */
 const PROTECTED_PREFIXES = ['/places', '/trips', '/groups', '/settings'];
 /** ログイン不要のパス */
-const PUBLIC_PREFIXES = ['/', '/login', '/auth', '/s/', '/invite/', '/share', '/api/health'];
+const PUBLIC_PREFIXES = ['/', '/login', '/auth', '/s/', '/api/health'];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
