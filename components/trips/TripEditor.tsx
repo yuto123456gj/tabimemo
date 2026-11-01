@@ -242,6 +242,7 @@ export function TripEditor({
                 index={index}
                 total={dayItems.length}
                 dayCount={days.length}
+                dayDate={days[activeDay]}
                 leg={legByItemId.get(item.id) ?? null}
                 isDragging={dragId === item.id}
                 isDropTarget={dropTargetId === item.id && dragId !== item.id}

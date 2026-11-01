@@ -7,6 +7,7 @@ import { Notice, Spinner } from '@/components/ui/Feedback';
 import { IconTrash } from '@/components/ui/Icons';
 import { deletePlace, setPlaceStatus, togglePlaceInList, updatePlace } from '@/lib/actions/places';
 import { cn } from '@/lib/utils/cn';
+import { OpeningFields, type OpeningValues } from './OpeningFields';
 import type { PlaceList, PlaceWithExtras } from '@/types/database';
 
 export function PlaceActions({
@@ -24,6 +25,13 @@ export function PlaceActions({
   const [memo, setMemo] = useState(place.memo ?? '');
   const [plannedDate, setPlannedDate] = useState(place.planned_date ?? '');
   const [savedMemo, setSavedMemo] = useState(false);
+  const [opening, setOpening] = useState<OpeningValues>({
+    openTime: place.open_time?.slice(0, 5) ?? '',
+    closeTime: place.close_time?.slice(0, 5) ?? '',
+    openFrom: place.open_from ?? '',
+    openUntil: place.open_until ?? '',
+    hoursNote: place.hours_note ?? '',
+  });
   const [pending, startTransition] = useTransition();
 
   const act = (fn: () => Promise<{ ok: boolean; error?: string }>) => {
@@ -99,6 +107,25 @@ export function PlaceActions({
           placeholder="営業時間、おすすめメニュー、行くときの注意など"
         />
         <p className="mt-1 text-xs text-ink-400">{savedMemo ? '保存しました' : '入力後、フォーカスを外すと保存されます'}</p>
+      </div>
+
+      <div>
+        <OpeningFields
+          value={opening}
+          onChange={(next) => {
+            setOpening(next);
+            act(() =>
+              updatePlace(place.id, {
+                open_time: next.openTime || null,
+                close_time: next.closeTime || null,
+                open_from: next.openFrom || null,
+                open_until: next.openUntil || null,
+                hours_note: next.hoursNote.trim() || null,
+              }),
+            );
+          }}
+          idPrefix={`edit-${place.id}`}
+        />
       </div>
 
       {lists.length > 0 && (

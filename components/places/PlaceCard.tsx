@@ -6,6 +6,7 @@ import { formatJaDateShort } from '@/lib/utils/date';
 import { formatDistance } from '@/lib/route/geo';
 import { cn } from '@/lib/utils/cn';
 import { hasLocation } from '@/lib/utils/place';
+import { formatOpeningHours } from '@/lib/utils/hours';
 import type { PlaceWithExtras } from '@/types/database';
 
 export function placeAverageRating(place: PlaceWithExtras): number | null {
@@ -92,6 +93,7 @@ export function PlaceCard({
           {typeof distanceMeters === 'number' && <Badge tone="neutral">{formatDistance(distanceMeters)}</Badge>}
           {placeWantAgain(place) && <Badge tone="accent">また行きたい</Badge>}
           {!hasLocation(place) && <Badge tone="neutral">📍 場所は未設定</Badge>}
+          {formatOpeningHours(place) && <Badge tone="neutral">🕑 {formatOpeningHours(place)}</Badge>}
         </div>
 
         {rating !== null && (

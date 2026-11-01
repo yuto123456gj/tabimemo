@@ -20,6 +20,11 @@ export interface PlaceInput {
   externalId?: string | null;
   tags?: string[];
   listIds?: string[];
+  openTime?: string | null;
+  closeTime?: string | null;
+  openFrom?: string | null;
+  openUntil?: string | null;
+  hoursNote?: string | null;
 }
 
 /** タグ名を解決（なければ作る）してIDを返す */
@@ -74,6 +79,11 @@ export async function createPlace(input: PlaceInput): Promise<ActionResult<strin
       memo: input.memo ?? null,
       planned_date: input.plannedDate || null,
       external_id: input.externalId ?? null,
+      open_time: input.openTime || null,
+      close_time: input.closeTime || null,
+      open_from: input.openFrom || null,
+      open_until: input.openUntil || null,
+      hours_note: input.hoursNote?.trim() || null,
       added_by: ctx.user.id,
       status: 'want',
     })
@@ -118,6 +128,11 @@ export async function updatePlace(
     status: 'want' | 'visited';
     lat: number | null;
     lng: number | null;
+    open_time: string | null;
+    close_time: string | null;
+    open_from: string | null;
+    open_until: string | null;
+    hours_note: string | null;
   }>,
 ): Promise<ActionResult> {
   const ctx = await requireUser();
@@ -125,6 +140,10 @@ export async function updatePlace(
 
   const clean = { ...patch };
   if (clean.planned_date === '') clean.planned_date = null;
+  // 空文字は「未設定」として扱う（time / date 列に空文字は入れられない）
+  for (const key of ['open_time', 'close_time', 'open_from', 'open_until'] as const) {
+    if (clean[key] === '') clean[key] = null;
+  }
 
   const { error } = await ctx.supabase.from('places').update(clean).eq('id', placeId);
   if (error) return fail(error.message);

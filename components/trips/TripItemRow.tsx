@@ -7,6 +7,7 @@ import { IconChevronDown, IconChevronUp, IconClock, IconDrag, IconTrash } from '
 import { TRANSPORT_MODES, categoryMeta, transportMeta } from '@/lib/constants';
 import { formatJaTime, formatStayMinutes } from '@/lib/utils/date';
 import { formatDistance, formatDuration } from '@/lib/route/geo';
+import { formatOpeningHours, formatOpeningPeriod, isWithinHours, isWithinPeriod } from '@/lib/utils/hours';
 import { cn } from '@/lib/utils/cn';
 import type { TripItemWithPlace } from '@/types/database';
 
@@ -23,6 +24,7 @@ export function TripItemRow({
   index,
   total,
   dayCount,
+  dayDate,
   leg,
   isDragging,
   isDropTarget,
@@ -39,6 +41,8 @@ export function TripItemRow({
   index: number;
   total: number;
   dayCount: number;
+  /** この項目がある日の日付（営業期間の判定に使う） */
+  dayDate?: string;
   leg?: { distance: number; duration: number } | null;
   isDragging: boolean;
   isDropTarget: boolean;
@@ -55,6 +59,11 @@ export function TripItemRow({
   const place = item.places ?? null;
   const title = place?.name ?? item.custom_title ?? '（名称未設定）';
   const meta = place ? categoryMeta(place.category) : null;
+
+  // 営業時間・営業期間から「行けなさそう」な点に気づけるようにする
+  const outsideHours =
+    place && item.arrive_time ? isWithinHours(place, item.arrive_time.slice(0, 5)) === false : false;
+  const outsidePeriod = place && dayDate ? !isWithinPeriod(place, dayDate) : false;
 
   return (
     <li
@@ -136,6 +145,26 @@ export function TripItemRow({
             )}
             {item.stay_minutes ? <Badge tone="neutral">滞在 {formatStayMinutes(item.stay_minutes)}</Badge> : null}
           </div>
+
+          {place && formatOpeningHours(place) && !outsideHours && (
+            <p className="mt-1.5 text-xs text-ink-500 dark:text-ink-400">
+              🕑 {formatOpeningHours(place)}
+              {place.hours_note ? ` ・ ${place.hours_note}` : ''}
+            </p>
+          )}
+
+          {outsideHours && place && (
+            <p className="mt-1.5 rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              ⚠️ 到着時刻が営業時間外かもしれません（{formatOpeningHours(place)}）
+              {place.hours_note ? ` ・ ${place.hours_note}` : ''}
+            </p>
+          )}
+
+          {outsidePeriod && place && (
+            <p className="mt-1.5 rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              ⚠️ この日は営業期間外かもしれません（{formatOpeningPeriod(place)}）
+            </p>
+          )}
 
           {item.memo && !open && (
             <p className="mt-1.5 line-clamp-2 text-xs text-ink-600 dark:text-ink-300">{item.memo}</p>

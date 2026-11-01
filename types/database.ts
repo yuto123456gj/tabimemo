@@ -44,6 +44,16 @@ export interface Place {
   memo: string | null;
   planned_date: string | null;
   status: Status;
+  /** 営業開始時刻（任意） */
+  open_time: string | null;
+  /** 営業終了時刻（任意） */
+  close_time: string | null;
+  /** 営業期間の開始日（任意・期間限定用） */
+  open_from: string | null;
+  /** 営業期間の終了日（任意） */
+  open_until: string | null;
+  /** 定休日などの補足（任意） */
+  hours_note: string | null;
   added_by: string | null;
   external_id: string | null;
   created_at: string;

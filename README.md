@@ -161,6 +161,7 @@ http://localhost:3000 を開いてください。
    5. `supabase/migrations/0005_fix_accept_invite.sql` … 招待受け入れの不具合修正
    6. `supabase/migrations/0006_join_code.sql` … 合言葉での参加
    7. `supabase/migrations/0007_drop_invites.sql` … 招待リンクの後片付け（任意）
+   8. `supabase/migrations/0008_opening_hours.sql` … 営業時間・営業期間
 3. エラーが出ないことを確認します（何度流しても安全なように書いてあります）
 
 ### 方法B: Supabase CLI から
@@ -338,7 +339,7 @@ public/                     manifest.webmanifest, sw.js, offline.html, icons/
 npm test
 ```
 
-外部通信を伴わない純粋関数を対象にしています（66件）。
+外部通信を伴わない純粋関数を対象にしています（81件）。
 
 | ファイル | 内容 |
 | --- | --- |
@@ -346,6 +347,7 @@ npm test
 | `tests/trips/reorder.test.ts` | 上下移動 / 日をまたぐ移動 / ドラッグ&ドロップ / 最適化結果の適用 / 保存すべき差分の抽出 |
 | `tests/utils/extract.test.ts` | SNSキャプションからの店名・エリア・カテゴリ・タグの抽出 |
 | `tests/utils/date.test.ts` | 日本語の日付表記、旅程の日付計算、タイムゾーンずれの防止 |
+| `tests/utils/hours.test.ts` | 営業時間・営業期間の表示と判定（深夜営業の日またぎを含む） |
 
 ---
 

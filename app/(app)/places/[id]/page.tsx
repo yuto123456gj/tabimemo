@@ -8,13 +8,14 @@ import { ReviewForm } from '@/components/places/ReviewForm';
 import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { Badge, Card, SectionTitle } from '@/components/ui/Card';
 import { StarRating } from '@/components/ui/StarRating';
-import { IconChevronRight, IconLink, IconMap } from '@/components/ui/Icons';
+import { IconChevronRight, IconClock, IconLink, IconMap } from '@/components/ui/Icons';
 import { categoryMeta } from '@/lib/constants';
 import { getPlace, listLists } from '@/lib/data/places';
 import { getCurrentUser, getGroupMembers } from '@/lib/data/session';
 import { formatJaDate, relativeFromNow } from '@/lib/utils/date';
 import { googleMapsPlaceUrl } from '@/lib/route/googleMaps';
 import { hasLocation } from '@/lib/utils/place';
+import { formatOpeningHours, formatOpeningPeriod } from '@/lib/utils/hours';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -38,6 +39,9 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
   const tags = (place.place_tags ?? []).map((pt) => pt.tags?.name).filter(Boolean) as string[];
   const memberListIds = (place.list_places ?? []).map((lp) => lp.list_id);
   const meta = categoryMeta(place.category);
+
+  const openingHours = formatOpeningHours(place);
+  const openingPeriod = formatOpeningPeriod(place);
 
   const ratings = reviews.map((r) => r.rating).filter((r): r is number => typeof r === 'number');
   const average = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
@@ -89,6 +93,17 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
               <span className="text-sm text-ink-500 dark:text-ink-400">
                 {average.toFixed(1)}（{ratings.length}人）
               </span>
+            </div>
+          )}
+
+          {(openingHours || openingPeriod || place.hours_note) && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-ink-50 px-3 py-2 text-sm dark:bg-ink-800">
+              <IconClock width={16} height={16} className="text-ink-400" />
+              {openingHours && <span className="font-medium">{openingHours}</span>}
+              {openingPeriod && <span className="text-ink-600 dark:text-ink-300">{openingPeriod}</span>}
+              {place.hours_note && (
+                <span className="text-xs text-ink-500 dark:text-ink-400">{place.hours_note}</span>
+              )}
             </div>
           )}
 

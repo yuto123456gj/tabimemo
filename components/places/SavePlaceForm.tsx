@@ -6,6 +6,7 @@ import { MapContainer } from '@/components/map/MapContainer';
 import { Button } from '@/components/ui/Button';
 import { Notice, Spinner } from '@/components/ui/Feedback';
 import { PLACE_CATEGORIES } from '@/lib/constants';
+import { EMPTY_OPENING, OpeningFields, type OpeningValues } from './OpeningFields';
 import { createPlace } from '@/lib/actions/places';
 import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
@@ -45,6 +46,7 @@ export function SavePlaceForm({
   const [sourceUrl, setSourceUrl] = useState(draft.sourceUrl ?? '');
   const [tagsText, setTagsText] = useState((draft.tags ?? []).join(' '));
   const [listIds, setListIds] = useState<string[]>([]);
+  const [opening, setOpening] = useState<OpeningValues>(EMPTY_OPENING);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -68,6 +70,11 @@ export function SavePlaceForm({
           .map((t) => t.trim())
           .filter(Boolean),
         listIds,
+        openTime: opening.openTime,
+        closeTime: opening.closeTime,
+        openFrom: opening.openFrom,
+        openUntil: opening.openUntil,
+        hoursNote: opening.hoursNote,
       });
 
       if (!result.ok) {
@@ -167,6 +174,8 @@ export function SavePlaceForm({
           onChange={(e) => setMemo(e.target.value)}
         />
       </div>
+
+      <OpeningFields value={opening} onChange={setOpening} idPrefix="new-place" />
 
       <div>
         <label className="label" htmlFor="source-url">
