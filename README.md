@@ -16,13 +16,14 @@
 4. [Supabaseプロジェクトの作り方](#supabaseプロジェクトの作り方)
 5. [マイグレーションの流し方](#マイグレーションの流し方)
 6. [Googleログインの設定手順](#googleログインの設定手順)
-7. [ローカル起動手順](#ローカル起動手順)
-8. [シードデータの投入](#シードデータの投入)
-9. [Vercelへのデプロイ手順](#vercelへのデプロイ手順)
-10. [任意APIキーを入れると何が良くなるか](#任意apiキーを入れると何が良くなるか)
-11. [ディレクトリ構成](#ディレクトリ構成)
-12. [テスト](#テスト)
-13. [設計メモ](#設計メモ)
+7. [通知（プッシュ）の設定](#通知プッシュの設定)
+8. [ローカル起動手順](#ローカル起動手順)
+9. [シードデータの投入](#シードデータの投入)
+10. [Vercelへのデプロイ手順](#vercelへのデプロイ手順)
+11. [任意APIキーを入れると何が良くなるか](#任意apiキーを入れると何が良くなるか)
+12. [ディレクトリ構成](#ディレクトリ構成)
+13. [テスト](#テスト)
+14. [設計メモ](#設計メモ)
 
 ---
 
@@ -51,6 +52,7 @@
 - **合言葉で参加**: 各グループに8文字の合言葉があり、相手に伝えるだけで参加できます。
   ログイン後にアプリ内で入力する方式なので、メールやリンクのリダイレクトで失敗しません
 - 誰かが追加・編集すると、Supabase Realtime で相手の画面にすぐ反映
+- **スポットが追加されると、他のメンバーにプッシュ通知**（アプリを閉じていても届く。端末ごとにON/OFF）
 - 「誰が追加したか」を表示
 
 ### しおり（旅程）
@@ -185,6 +187,7 @@ supabase db push
 | `tags` / `place_tags` | タグ（多対多） |
 | `trips` / `trip_items` | しおり本体と日程の項目 |
 | `trip_checklist` / `trip_budget_items` | 持ち物・予算 |
+| `push_subscriptions` | プッシュ通知の送信先（**端末ごと**。行があれば通知ON） |
 
 **全テーブルで RLS を有効化**し、「そのグループのメンバーだけが読み書きできる」ポリシーを設定しています。`group_members` を直接参照すると再帰するため、`is_group_member()` などの `security definer` 関数を経由しています。
 
@@ -212,6 +215,43 @@ supabase db push
 3. **Authentication → URL Configuration** のRedirect URLsに `/auth/callback` を含むURLが入っていることを確認
 
 これで、ログイン画面の「Googleでログイン」が使えるようになります。
+
+---
+
+## 通知（プッシュ）の設定
+
+メンバーが新しいスポットを登録すると、**同じグループの他のメンバーのスマホに通知**が届きます（自分の登録では自分に通知は来ません）。無料で、外部の通知サービスは使いません。
+
+### 1. 鍵を作る
+
+```bash
+npm run vapid
+```
+
+表示された3行を `.env.local` に貼り、**Vercel の Environment Variables にも同じ値**を登録します。
+
+| 変数 | 役割 |
+| --- | --- |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | ブラウザが購読するときに使う公開鍵 |
+| `VAPID_PRIVATE_KEY` | 送信時の署名に使う秘密鍵（**公開しない**） |
+| `VAPID_SUBJECT` | `mailto:自分のメールアドレス`（プッシュサービスからの連絡先） |
+
+> 一度作った鍵は変えないでください。変えると全員の「通知ON」が無効になり、再度ONにし直す必要があります。
+
+### 2. マイグレーションを流す
+
+`supabase/migrations/0009_push_subscriptions.sql` を Supabase の SQL Editor で実行します。
+
+### 3. 各自がONにする
+
+**設定 → 通知 → スポット追加のお知らせ** をONにします。端末ごとの設定なので、通知を受けたい端末それぞれでONにしてください。ONにしたあと「テスト通知を送る」で、その端末に実際に届くか確認できます。
+
+### 注意点
+
+- **iPhone・iPad**: Safariのタブで開いているだけでは通知は届きません。共有ボタン（□↑）から**ホーム画面に追加**し、そのアイコンから開いた状態でONにしてください（iOS 16.4以降）。Android・PCのChromeは通常のタブでも届きます。
+- **開発サーバー（`npm run dev`）では通知は動きません**。Service Worker を本番ビルドでのみ登録しているためです。動作確認はデプロイ先で行ってください。
+- 一度ブラウザで通知を「許可しない」にすると、アプリ側からは出し直せません。端末の「設定 → 通知」やブラウザのサイト設定から許可し直す必要があります。
+- サービスロールキーは不要です。他メンバーの通知先は `push_targets_for_group()`（`security definer`）経由で、自分が属するグループに限って取得します。
 
 ---
 
@@ -263,6 +303,9 @@ npm run seed -- you@example.com
    | `GOOGLE_PLACES_API_KEY` | 任意 | 入れると場所検索が強化されます |
    | `ANTHROPIC_API_KEY` | 任意 | 入れるとSNS抽出が賢くなります |
    | `NOMINATIM_USER_AGENT` | 推奨 | 連絡先入りに書き換えてください |
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 任意 | 通知を使う場合。`npm run vapid` で作る |
+   | `VAPID_PRIVATE_KEY` | 任意 | 同上（秘密鍵） |
+   | `VAPID_SUBJECT` | 任意 | 同上（`mailto:自分のメール`） |
    | `SUPABASE_SERVICE_ROLE_KEY` | ❌ | **設定しないでください**（ローカルのシード専用） |
 
 4. **Deploy** を押します
@@ -320,14 +363,15 @@ lib/
     extract/                rule.ts, claude.ts, index.ts（自動切替）
     routing/                osrm.ts, haversine.ts, index.ts（フォールバック）
   route/                    optimize.ts（最近傍法＋2-opt）, geo.ts, googleMaps.ts
+  notify/push.ts            Webプッシュの送信（web-push / VAPID）
   trips/reorder.ts          日程の並べ替えロジック（純粋関数）
   utils/                    date, cn, ratelimit
   data/                     Server Component用のデータ取得
-  actions/                  Server Actions（places / trips / groups / auth）
+  actions/                  Server Actions（places / trips / groups / auth / notifications）
 
 supabase/migrations/        0001_init.sql, 0002_rls.sql, 0003_storage.sql
-scripts/                    seed.ts, generate-icons.mjs
-tests/                      route / trips / utils の単体テスト
+scripts/                    seed.ts, vapid.ts, generate-icons.mjs
+tests/                      route / trips / utils / notify の単体テスト
 public/                     manifest.webmanifest, sw.js, offline.html, icons/
 ```
 

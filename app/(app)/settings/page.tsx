@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { AvatarSettings } from '@/components/layout/AvatarSettings';
 import { ProfileSettings } from '@/components/layout/ProfileSettings';
+import { PushSettings } from '@/components/layout/PushSettings';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Avatar } from '@/components/ui/Avatar';
+import { Notice } from '@/components/ui/Feedback';
 import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } from '@/components/layout/SettingsRow';
 import { Button } from '@/components/ui/Button';
 import {
@@ -14,6 +16,7 @@ import {
   IconUsers,
 } from '@/components/ui/Icons';
 import { APP_NAME, APP_NAME_JA } from '@/lib/constants';
+import { env, isPushConfigured } from '@/lib/env';
 import { getActiveGroup, getCurrentUser, getMyGroups, getProfile } from '@/lib/data/session';
 import { countPlaces, listLists, listTags } from '@/lib/data/places';
 import { listTrips } from '@/lib/data/trips';
@@ -127,6 +130,22 @@ export default async function SettingsPage() {
           label="リスト / タグ"
           value={`${lists.length} / ${tags.length}`}
         />
+      </SettingsGroup>
+
+      {/* 通知 */}
+      <SettingsGroup
+        title="通知"
+        footer="通知は端末ごとにON/OFFします。自分が追加したスポットでは、自分には通知は届きません。"
+      >
+        <li className="px-4 py-3.5">
+          {isPushConfigured() ? (
+            <PushSettings vapidPublicKey={env.vapidPublicKey} />
+          ) : (
+            <Notice tone="info">
+              通知を使うには、サイト側に通知用のキー（VAPID）を設定する必要があります。README の「通知の設定」を参照してください。
+            </Notice>
+          )}
+        </li>
       </SettingsGroup>
 
       {/* 表示 */}

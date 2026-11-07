@@ -3,8 +3,9 @@
  * - ホーム画面に追加できるようにする
  * - 静的アセットはキャッシュ優先、ページはネットワーク優先
  * - API・認証・Supabaseへの通信はキャッシュしない（常に最新を取る）
+ * - プッシュ通知の受信と、タップしたときの画面移動
  */
-const VERSION = 'tabimemo-v1';
+const VERSION = 'tabimemo-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const OFFLINE_URL = '/offline.html';
@@ -85,4 +86,49 @@ self.addEventListener('fetch', (event) => {
         }),
     );
   }
+});
+
+// ---------- プッシュ通知 ----------
+// 送信側は lib/notify/push.ts。本文は PushPayload（title / body / url / tag）のJSON。
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // JSONでない通知が来ても落ちないようにする
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'タビメモ';
+  const url = payload.url || '/places';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      // 同じスポットの通知を何度も積み上げない
+      tag: payload.tag || 'tabimemo',
+      renotify: Boolean(payload.tag),
+      data: { url },
+    }),
+  );
+});
+
+// 通知をタップしたら、すでに開いているタブを使い回して該当ページへ移動する
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || '/places', self.location.origin);
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if (new URL(client.url).origin === target.origin) {
+          return client.focus().then(() => ('navigate' in client ? client.navigate(target.href) : undefined));
+        }
+      }
+      return self.clients.openWindow(target.href);
+    }),
+  );
 });

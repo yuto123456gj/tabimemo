@@ -148,6 +148,18 @@ export interface TripBudgetItem {
   created_at: string;
 }
 
+/** プッシュ通知の購読先（端末ごとに1行。行があれば通知ON） */
+export interface PushSubscriptionRow {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  /** ブラウザが返す auth の値（列名が auth だと SQL で紛らわしいため auth_key） */
+  auth_key: string;
+  user_agent: string | null;
+  created_at: string;
+}
+
 /** 画面で使う結合済みの型 */
 export type PlaceWithExtras = Place & {
   place_reviews?: PlaceReview[] | null;

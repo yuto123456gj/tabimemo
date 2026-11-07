@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { requireUser } from './session';
 import { fail, succeed, type ActionResult } from './types';
+import { notifyPlaceAdded } from '@/lib/notify/push';
 
 export interface PlaceInput {
   groupId: string;
@@ -109,6 +110,15 @@ export async function createPlace(input: PlaceInput): Promise<ActionResult<strin
       { onConflict: 'list_id,place_id' },
     );
   }
+
+  // 同じグループの他のメンバーにプッシュ通知を送る（失敗しても保存は成功扱い）
+  await notifyPlaceAdded(ctx.supabase, {
+    groupId: input.groupId,
+    placeId,
+    placeName: input.name.trim(),
+    actorId: ctx.user.id,
+    category: input.category ?? null,
+  });
 
   revalidatePath('/places');
   revalidatePath('/');

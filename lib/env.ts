@@ -12,6 +12,12 @@ export const env = {
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? '',
   nominatimUserAgent:
     process.env.NOMINATIM_USER_AGENT ?? 'Tabimemo/0.1 (https://github.com/; contact: set NOMINATIM_USER_AGENT)',
+  /** Webプッシュ通知の公開鍵。ブラウザの購読時に必要なので NEXT_PUBLIC_。 */
+  vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '',
+  /** Webプッシュ通知の秘密鍵。サーバー専用。 */
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? '',
+  /** プッシュサービスへの連絡先（mailto: か https: のURL）。 */
+  vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:noreply@example.com',
   /**
    * 招待リンク・共有リンクの組み立てに使う「このサイトのURL」。
    * 優先順位:
@@ -32,6 +38,11 @@ export const env = {
 /** Supabase の接続情報が揃っているか（揃っていなければDB機能をスキップする） */
 export function isSupabaseConfigured(): boolean {
   return Boolean(env.supabaseUrl && env.supabaseAnonKey && env.supabaseUrl.startsWith('http'));
+}
+
+/** プッシュ通知の鍵が揃っているか（揃っていなければ通知機能を出さない） */
+export function isPushConfigured(): boolean {
+  return Boolean(env.vapidPublicKey && env.vapidPrivateKey);
 }
 
 /** ビルド時・未設定時に @supabase/ssr が例外を投げないためのダミー値 */
