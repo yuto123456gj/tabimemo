@@ -18,6 +18,8 @@ export const env = {
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? '',
   /** プッシュサービスへの連絡先（mailto: か https: のURL）。 */
   vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:noreply@example.com',
+  /** 定期実行（/api/cron/*）の合言葉。Vercel Cron が Authorization ヘッダーで送ってくる。 */
+  cronSecret: process.env.CRON_SECRET ?? '',
   /**
    * 招待リンク・共有リンクの組み立てに使う「このサイトのURL」。
    * 優先順位:

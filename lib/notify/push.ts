@@ -9,6 +9,7 @@ import webpush, { type PushSubscription, type WebPushError } from 'web-push';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { env, isPushConfigured } from '@/lib/env';
 import { APP_NAME_JA, categoryMeta } from '@/lib/constants';
+import { formatJaMonthDay } from '@/lib/utils/date';
 
 /** Service Worker（public/sw.js）が受け取るJSON。形を変えたら sw.js も直す。 */
 export interface PushPayload {
@@ -46,7 +47,40 @@ export function buildPlaceAddedPayload({
   };
 }
 
-interface PushTarget {
+export type ReminderKind = 'start' | 'end';
+
+/** 期間限定スポットの「1週間前」のお知らせを組み立てる */
+export function buildReminderPayload({
+  kind,
+  placeName,
+  placeId,
+  date,
+}: {
+  kind: ReminderKind;
+  placeName: string;
+  placeId: string;
+  /** open_from または open_until の日付（YYYY-MM-DD） */
+  date: string;
+}): PushPayload {
+  const name = placeName.trim() || '保存したスポット';
+  const when = formatJaMonthDay(date);
+
+  return kind === 'start'
+    ? {
+        title: '⏳ あと1週間で始まります',
+        body: `「${name}」は${when}から。そろそろ予定を決めませんか？`,
+        url: `/places/${placeId}`,
+        tag: `reminder-start-${placeId}-${date}`,
+      }
+    : {
+        title: '⏳ あと1週間で終わります',
+        body: `「${name}」は${when}まで。行くなら今のうち！`,
+        url: `/places/${placeId}`,
+        tag: `reminder-end-${placeId}-${date}`,
+      };
+}
+
+export interface PushTarget {
   endpoint: string;
   p256dh: string;
   auth_key: string;
@@ -65,6 +99,47 @@ function isGone(error: unknown): boolean {
   return status === 404 || status === 410;
 }
 
+export interface DeliveryResult {
+  sent: number;
+  failed: number;
+  /** 無効になっていた購読先（呼び出し側で削除する） */
+  dead: string[];
+}
+
+/**
+ * 渡された購読先すべてに1件の通知を送る。
+ * 購読先の削除方法は呼び出し側（ログイン中の本人 / cron）で違うので、ここではやらない。
+ */
+export async function deliver(
+  targets: PushTarget[],
+  payload: PushPayload,
+  ttlSeconds = 60 * 60 * 24,
+): Promise<DeliveryResult> {
+  if (targets.length === 0) return { sent: 0, failed: 0, dead: [] };
+
+  webpush.setVapidDetails(env.vapidSubject, env.vapidPublicKey, env.vapidPrivateKey);
+  const body = JSON.stringify(payload);
+
+  const results = await Promise.allSettled(
+    targets.map((target) => webpush.sendNotification(toSubscription(target), body, { TTL: ttlSeconds })),
+  );
+
+  const out: DeliveryResult = { sent: 0, failed: 0, dead: [] };
+  for (const [i, result] of results.entries()) {
+    if (result.status === 'fulfilled') {
+      out.sent += 1;
+      continue;
+    }
+    out.failed += 1;
+    if (isGone(result.reason)) {
+      out.dead.push(targets[i].endpoint);
+    } else {
+      console.error('[push] 送信に失敗しました:', (result.reason as Error)?.message ?? result.reason);
+    }
+  }
+  return out;
+}
+
 /**
  * グループの「自分以外のメンバー」全員に通知を送る。
  * 送信先は security definer 関数経由で取得する（他人の購読は RLS では読めない）。
@@ -81,34 +156,11 @@ async function sendToGroup(
     return;
   }
 
-  const targets = (data ?? []) as PushTarget[];
-  if (targets.length === 0) return;
-
-  webpush.setVapidDetails(env.vapidSubject, env.vapidPublicKey, env.vapidPrivateKey);
-  const body = JSON.stringify(payload);
-
-  const results = await Promise.allSettled(
-    targets.map((target) =>
-      webpush.sendNotification(toSubscription(target), body, {
-        // 相手がオフラインでも、しばらくは配信を試み続けてもらう（1日）
-        TTL: 60 * 60 * 24,
-      }),
-    ),
-  );
+  const { dead } = await deliver((data ?? []) as PushTarget[], payload);
 
   // 無効になった購読先は消しておく（次回以降むだに送らない）
-  const dead = results
-    .map((result, i) => (result.status === 'rejected' && isGone(result.reason) ? targets[i].endpoint : null))
-    .filter((endpoint): endpoint is string => endpoint !== null);
-
   for (const endpoint of dead) {
     await supabase.rpc('prune_push_subscription', { p_endpoint: endpoint });
-  }
-
-  for (const result of results) {
-    if (result.status === 'rejected' && !isGone(result.reason)) {
-      console.error('[push] 送信に失敗しました:', (result.reason as Error)?.message ?? result.reason);
-    }
   }
 }
 
@@ -127,34 +179,19 @@ export async function sendTestPush(
 
   if (error) throw new Error(error.message);
 
-  const targets = (data ?? []) as PushTarget[];
-  if (targets.length === 0) return { sent: 0, failed: 0 };
-
-  webpush.setVapidDetails(env.vapidSubject, env.vapidPublicKey, env.vapidPrivateKey);
-  const body = JSON.stringify({
-    title: `${APP_NAME_JA}のテスト通知`,
-    body: 'この端末に通知が届きました 🎉',
-    url: '/settings',
-    tag: 'tabimemo-test',
-  } satisfies PushPayload);
-
-  const results = await Promise.allSettled(
-    targets.map((target) => webpush.sendNotification(toSubscription(target), body, { TTL: 60 })),
+  const { sent, failed, dead } = await deliver(
+    (data ?? []) as PushTarget[],
+    {
+      title: `${APP_NAME_JA}のテスト通知`,
+      body: 'この端末に通知が届きました 🎉',
+      url: '/settings',
+      tag: 'tabimemo-test',
+    },
+    60,
   );
 
-  let sent = 0;
-  let failed = 0;
-  for (const [i, result] of results.entries()) {
-    if (result.status === 'fulfilled') {
-      sent += 1;
-      continue;
-    }
-    failed += 1;
-    if (isGone(result.reason)) {
-      await supabase.rpc('prune_push_subscription', { p_endpoint: targets[i].endpoint });
-    } else {
-      console.error('[push] テスト送信に失敗しました:', (result.reason as Error)?.message ?? result.reason);
-    }
+  for (const endpoint of dead) {
+    await supabase.rpc('prune_push_subscription', { p_endpoint: endpoint });
   }
 
   return { sent, failed };

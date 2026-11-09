@@ -52,6 +52,17 @@ export function toDateInputValue(value: string | Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/**
+ * 日本時間での「今日」から days 日後の 'YYYY-MM-DD'。
+ * サーバー（Vercel）は UTC で動くため、日付の判定は必ずこれを通す。
+ */
+export function jstDatePlusDays(days: number, now: Date = new Date()): string {
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  jst.setUTCDate(jst.getUTCDate() + days);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${jst.getUTCFullYear()}-${pad(jst.getUTCMonth() + 1)}-${pad(jst.getUTCDate())}`;
+}
+
 /** 旅行の開始日〜終了日の日付配列（しおりのタブに使う） */
 export function tripDates(startDate: string, endDate: string): string[] {
   const start = toDate(startDate);

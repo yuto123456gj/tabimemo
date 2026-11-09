@@ -53,6 +53,7 @@
   ログイン後にアプリ内で入力する方式なので、メールやリンクのリダイレクトで失敗しません
 - 誰かが追加・編集すると、Supabase Realtime で相手の画面にすぐ反映
 - **スポットが追加されると、他のメンバーにプッシュ通知**（アプリを閉じていても届く。端末ごとにON/OFF）
+- 営業期間を入れた期間限定スポットは、**開始・終了の1週間前に全員へリマインド**
 - 「誰が追加したか」を表示
 
 ### しおり（旅程）
@@ -188,6 +189,7 @@ supabase db push
 | `trips` / `trip_items` | しおり本体と日程の項目 |
 | `trip_checklist` / `trip_budget_items` | 持ち物・予算 |
 | `push_subscriptions` | プッシュ通知の送信先（**端末ごと**。行があれば通知ON） |
+| `place_reminders` | 期間限定スポットのリマインダー送信記録（重複送信の防止） |
 
 **全テーブルで RLS を有効化**し、「そのグループのメンバーだけが読み書きできる」ポリシーを設定しています。`group_members` を直接参照すると再帰するため、`is_group_member()` などの `security definer` 関数を経由しています。
 
@@ -245,6 +247,31 @@ npm run vapid
 ### 3. 各自がONにする
 
 **設定 → 通知 → スポット追加のお知らせ** をONにします。端末ごとの設定なので、通知を受けたい端末それぞれでONにしてください。ONにしたあと「テスト通知を送る」で、その端末に実際に届くか確認できます。
+
+### 4. 期間限定スポットのリマインダー（任意）
+
+スポットに**営業期間**（`open_from` / `open_until`）を入れておくと、毎朝9時（日本時間）に次の通知が届きます。送り先はそのグループ**全員**（追加した本人を含む）です。
+
+| タイミング | 通知 |
+| --- | --- |
+| 開始日の1週間前 | ⏳ あと1週間で始まります |
+| 終了日の1週間前 | ⏳ あと1週間で終わります（行くなら今のうち！） |
+
+使うには、上記に加えて次の3つが必要です。
+
+1. `supabase/migrations/0010_place_reminders.sql` を実行（送信済みの記録用。重複送信を防ぎます）
+2. Vercel に `CRON_SECRET` を登録（作り方は `.env.example` 参照）
+3. Vercel に `SUPABASE_SERVICE_ROLE_KEY` を登録（**秘密**タイプで）
+
+> 3が必要なのは、cron が動く時刻には誰もログインしておらず、「ログイン中の本人の権限で読む」通常の方式が使えないためです。このキーはサーバー側（`/api/cron/reminders`）だけで使われ、ブラウザには出ません。エンドポイントは `CRON_SECRET` で保護しています。
+
+Cron の設定は [`vercel.json`](vercel.json) にあります（`0 0 * * *` = 0:00 UTC = 日本時間9:00）。Vercel の無料プランでは cron は1日1回までなので、この頻度が上限です。手動で試す場合：
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://あなたのドメイン/api/cron/reminders
+```
+
+`{"ok":true,"date":"2026-11-16","found":1,"notified":1,"skipped":0}` のように返ります（`found` は対象スポット数、`notified` は通知できた数）。
 
 ### 注意点
 
@@ -306,7 +333,8 @@ npm run seed -- you@example.com
    | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 任意 | 通知を使う場合。`npm run vapid` で作る |
    | `VAPID_PRIVATE_KEY` | 任意 | 同上（秘密鍵） |
    | `VAPID_SUBJECT` | 任意 | 同上（`mailto:自分のメール`） |
-   | `SUPABASE_SERVICE_ROLE_KEY` | ❌ | **設定しないでください**（ローカルのシード専用） |
+   | `CRON_SECRET` | 任意 | リマインダー通知を使う場合（後述） |
+   | `SUPABASE_SERVICE_ROLE_KEY` | 任意 | **リマインダー通知を使う場合のみ**登録（後述）。それ以外では不要 |
 
 4. **Deploy** を押します
 5. デプロイ後、Supabase 側の設定を本番URLに合わせます
@@ -341,6 +369,7 @@ app/
     places/search           場所検索（Nominatim / Google）
     places/photo            Google写真の中継（キーを隠すため）
     extract                 テキストからの場所抽出（現在は画面から未使用）
+    cron/reminders          期間限定スポットの1週間前リマインダー（毎日1回）
     route/matrix            距離行列＋ルート最適化
     health                  設定状況の確認
   auth/callback             OAuth / マジックリンクの着地点
