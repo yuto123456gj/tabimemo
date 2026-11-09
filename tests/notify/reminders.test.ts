@@ -1,6 +1,45 @@
 import { describe, expect, it } from 'vitest';
-import { buildReminderPayload } from '@/lib/notify/push';
+import { buildReminderPayload, reminderKindFor } from '@/lib/notify/push';
 import { jstDatePlusDays } from '@/lib/utils/date';
+
+describe('reminderKindFor', () => {
+  const target = '2026-11-16';
+
+  it('開始日の1週間前なら start', () => {
+    const place = { open_from: target, open_until: '2026-12-25', status: 'want' };
+    expect(reminderKindFor(place, target)).toBe('start');
+  });
+
+  it('終了日の1週間前なら end', () => {
+    const place = { open_from: '2026-10-01', open_until: target, status: 'want' };
+    expect(reminderKindFor(place, target)).toBe('end');
+  });
+
+  it('「行った！」にしたスポットには終了のお知らせを送らない', () => {
+    const place = { open_from: '2026-10-01', open_until: target, status: 'visited' };
+    expect(reminderKindFor(place, target)).toBeNull();
+  });
+
+  it('「行った！」でも開始のお知らせは送る', () => {
+    const place = { open_from: target, open_until: '2026-12-25', status: 'visited' };
+    expect(reminderKindFor(place, target)).toBe('start');
+  });
+
+  it('1日だけのイベントは start だけにする', () => {
+    const place = { open_from: target, open_until: target, status: 'want' };
+    expect(reminderKindFor(place, target)).toBe('start');
+  });
+
+  it('日付が合わなければ何も送らない', () => {
+    const place = { open_from: '2026-12-01', open_until: '2026-12-25', status: 'want' };
+    expect(reminderKindFor(place, target)).toBeNull();
+  });
+
+  it('営業期間が空なら何も送らない', () => {
+    const place = { open_from: null, open_until: null, status: 'want' };
+    expect(reminderKindFor(place, target)).toBeNull();
+  });
+});
 
 describe('buildReminderPayload', () => {
   it('開始1週間前は「始まります」と日付を伝える', () => {

@@ -49,6 +49,23 @@ export function buildPlaceAddedPayload({
 
 export type ReminderKind = 'start' | 'end';
 
+/**
+ * そのスポットに、その日付のリマインダーを送るべきか判定する。
+ *
+ * - 開始日の1週間前 → 'start'
+ * - 終了日の1週間前 → 'end'。ただし「行った！」に変えたスポットは送らない
+ *   （もう行ったのに「あと1週間で終わります」と言われても困るため）
+ * - 1日だけのイベント（開始日=終了日）は 'start' だけにする
+ */
+export function reminderKindFor(
+  place: { open_from: string | null; open_until: string | null; status: string },
+  targetDate: string,
+): ReminderKind | null {
+  if (place.open_from === targetDate) return 'start';
+  if (place.open_until === targetDate) return place.status === 'visited' ? null : 'end';
+  return null;
+}
+
 /** 期間限定スポットの「1週間前」のお知らせを組み立てる */
 export function buildReminderPayload({
   kind,

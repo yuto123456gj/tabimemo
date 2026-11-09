@@ -10,7 +10,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { buildReminderPayload, deliver, type PushTarget, type ReminderKind } from '@/lib/notify/push';
+import { buildReminderPayload, deliver, reminderKindFor, type PushTarget } from '@/lib/notify/push';
 import { env, isPushConfigured } from '@/lib/env';
 import { jstDatePlusDays } from '@/lib/utils/date';
 
@@ -23,6 +23,7 @@ interface TargetPlace {
   group_id: string;
   open_from: string | null;
   open_until: string | null;
+  status: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('places')
-    .select('id, name, group_id, open_from, open_until')
+    .select('id, name, group_id, open_from, open_until, status')
     .or(`open_from.eq.${targetDate},open_until.eq.${targetDate}`);
 
   if (error) {
@@ -56,8 +57,12 @@ export async function GET(request: NextRequest) {
   let skipped = 0;
 
   for (const place of places) {
-    // 1日だけのイベント（開始日=終了日）は「始まります」だけにする
-    const kind: ReminderKind = place.open_from === targetDate ? 'start' : 'end';
+    // 「行った！」にしたスポットには終了のお知らせを送らない
+    const kind = reminderKindFor(place, targetDate);
+    if (!kind) {
+      skipped += 1;
+      continue;
+    }
 
     // 先に記録を作る。重複（= すでに送信済み）なら何もしない
     const { error: markError } = await supabase
