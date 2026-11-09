@@ -99,55 +99,6 @@ export interface PlaceTag {
   tag_id: string;
 }
 
-export interface Trip {
-  id: string;
-  group_id: string;
-  title: string;
-  start_date: string;
-  end_date: string;
-  cover_url: string | null;
-  area_lat: number | null;
-  area_lng: number | null;
-  public_share_token: string;
-  is_public: boolean;
-  created_by: string | null;
-  created_at: string;
-}
-
-export interface TripItem {
-  id: string;
-  trip_id: string;
-  day_index: number;
-  order_index: number;
-  place_id: string | null;
-  custom_title: string | null;
-  arrive_time: string | null;
-  stay_minutes: number | null;
-  transport: string | null;
-  memo: string | null;
-  created_at: string;
-}
-
-export interface TripChecklistItem {
-  id: string;
-  trip_id: string;
-  label: string;
-  checked: boolean;
-  assigned_to: string | null;
-  order_index: number;
-  created_at: string;
-}
-
-export interface TripBudgetItem {
-  id: string;
-  trip_id: string;
-  label: string;
-  amount: number;
-  category: string | null;
-  order_index: number;
-  created_at: string;
-}
-
 /** プッシュ通知の購読先（端末ごとに1行。行があれば通知ON） */
 export interface PushSubscriptionRow {
   id: string;
@@ -166,8 +117,4 @@ export type PlaceWithExtras = Place & {
   place_tags?: { tag_id: string; tags?: Tag | null }[] | null;
   list_places?: { list_id: string }[] | null;
   profiles?: Pick<Profile, 'id' | 'display_name' | 'avatar_url'> | null;
-};
-
-export type TripItemWithPlace = TripItem & {
-  places?: Place | null;
 };

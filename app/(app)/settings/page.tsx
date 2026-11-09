@@ -8,8 +8,8 @@ import { Notice } from '@/components/ui/Feedback';
 import { SettingsActionRow, SettingsGroup, SettingsInfoRow, SettingsLinkRow } from '@/components/layout/SettingsRow';
 import { Button } from '@/components/ui/Button';
 import {
-  IconBook,
   IconList,
+  IconMap,
   IconPin,
   IconSettings,
   IconSparkles,
@@ -19,7 +19,6 @@ import { APP_NAME, APP_NAME_JA } from '@/lib/constants';
 import { env, isPushConfigured } from '@/lib/env';
 import { getActiveGroup, getCurrentUser, getMyGroups, getProfile } from '@/lib/data/session';
 import { countPlaces, listLists, listTags } from '@/lib/data/places';
-import { listTrips } from '@/lib/data/trips';
 
 export const metadata: Metadata = { title: '設定' };
 
@@ -31,14 +30,9 @@ export default async function SettingsPage() {
     getActiveGroup(),
   ]);
 
-  const [counts, trips, lists, tags] = activeGroup
-    ? await Promise.all([
-        countPlaces(activeGroup.id),
-        listTrips(activeGroup.id),
-        listLists(activeGroup.id),
-        listTags(activeGroup.id),
-      ])
-    : [{ want: 0, visited: 0 }, [], [], []];
+  const [counts, lists, tags] = activeGroup
+    ? await Promise.all([countPlaces(activeGroup.id), listLists(activeGroup.id), listTags(activeGroup.id)])
+    : [{ want: 0, visited: 0 }, [], []];
 
   const displayName = profile?.display_name ?? 'たびびと';
 
@@ -66,8 +60,8 @@ export default async function SettingsPage() {
           <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">行った！</p>
         </div>
         <div className="card p-3 text-center">
-          <p className="text-2xl font-extrabold text-ink-700 dark:text-ink-200">{trips.length}</p>
-          <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">しおり</p>
+          <p className="text-2xl font-extrabold text-ink-700 dark:text-ink-200">{counts.want + counts.visited}</p>
+          <p className="mt-0.5 text-[11px] text-ink-500 dark:text-ink-400">ぜんぶ</p>
         </div>
       </section>
 
@@ -96,7 +90,7 @@ export default async function SettingsPage() {
       {/* グループ */}
       <SettingsGroup
         title="グループ"
-        footer="スポットとしおりはグループごとに保存されます。招待リンクを送ると、相手の画面にもすぐ反映されます。"
+        footer="スポットはグループごとに保存されます。合言葉を伝えて参加してもらうと、相手の画面にもすぐ反映されます。"
       >
         <SettingsInfoRow
           icon={<IconUsers width={18} height={18} />}
@@ -120,10 +114,10 @@ export default async function SettingsPage() {
           value={`${counts.want + counts.visited}件`}
         />
         <SettingsLinkRow
-          href="/trips"
-          icon={<IconBook width={18} height={18} />}
-          label="しおり"
-          value={`${trips.length}件`}
+          href="/map"
+          icon={<IconMap width={18} height={18} />}
+          label="地図で見る"
+          value={`${counts.want + counts.visited}件`}
         />
         <SettingsInfoRow
           icon={<IconList width={18} height={18} />}

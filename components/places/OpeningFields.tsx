@@ -84,7 +84,7 @@ export function OpeningFields({
               />
             </div>
             <p className="mt-1 text-xs text-ink-400">
-              しおりの到着時刻がこの範囲から外れていると、注意が出ます。
+              営業時間の目安として、一覧や地図に表示されます。
             </p>
           </div>
 

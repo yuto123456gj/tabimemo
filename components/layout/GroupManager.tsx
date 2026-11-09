@@ -213,7 +213,7 @@ export function GroupManager({
                 (confirmingDelete === group.id ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-red-600 dark:text-red-400">
-                      「{group.name}」の中のスポットとしおりも、すべて消えます。戻せません。
+                      「{group.name}」の中のスポットも、すべて消えます。戻せません。
                     </span>
                     <Button
                       variant="danger"

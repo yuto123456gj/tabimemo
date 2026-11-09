@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { APP_NAME_JA } from '@/lib/constants';
 import { GroupSwitcher } from './GroupSwitcher';
 import { ThemeToggle } from './ThemeToggle';
-import { IconBook, IconPin, IconSettings, IconUsers } from '@/components/ui/Icons';
+import { IconMap, IconPin, IconSettings, IconUsers } from '@/components/ui/Icons';
 import type { GroupWithRole } from '@/lib/data/session';
 
 /** 上部バー（スマホではロゴ＋グループ切替、PCではナビも出す） */
@@ -31,9 +31,9 @@ export function TopBar({
             <IconPin width={17} height={17} />
             スポット
           </Link>
-          <Link href="/trips" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
-            <IconBook width={17} height={17} />
-            しおり
+          <Link href="/map" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
+            <IconMap width={17} height={17} />
+            地図
           </Link>
           <Link href="/groups" className="flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-brand-600 dark:text-ink-300 dark:hover:bg-ink-800">
             <IconUsers width={17} height={17} />

@@ -11,7 +11,7 @@ const FEATURES = [
   },
   {
     Icon: IconBook,
-    title: 'そのまま旅のしおりへ',
+    title: 'ぜんぶ地図の上に',
     body: '貯めたスポットを選ぶだけで日程表に。到着時刻・滞在時間・移動手段を入れて、持ち物や予算も1か所に。',
   },
   {
@@ -147,7 +147,7 @@ export function Landing() {
         <div className="rounded-card bg-brand-gradient px-6 py-10 text-white shadow-lift">
           <h2 className="text-2xl font-extrabold">次の旅、どこに行く？</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/90">
-            まずは1件、行きたい場所を保存してみてください。しおりとルートは、あとから勝手についてきます。
+            まずは1件、行きたい場所を保存してみてください。地図にピンが立って、2人で眺められるようになります。
           </p>
           <ButtonLink href="/login" variant="outline" size="lg" className="mt-6 border-transparent bg-white text-brand-600 hover:text-brand-700">
             はじめる

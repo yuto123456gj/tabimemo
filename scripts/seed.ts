@@ -104,7 +104,6 @@ async function main() {
 
   if (groupId) {
     console.log('… 既存のサンプルグループを初期化します');
-    await supabase.from('trips').delete().eq('group_id', groupId);
     await supabase.from('places').delete().eq('group_id', groupId);
     await supabase.from('tags').delete().eq('group_id', groupId);
     await supabase.from('lists').delete().eq('group_id', groupId);
@@ -202,78 +201,6 @@ async function main() {
   if (reviews.length > 0) await supabase.from('place_reviews').insert(reviews);
   console.log(`✓ 行った記録 ${reviews.length}件`);
 
-  // 9. サンプル旅行（大阪 2泊3日）
-  const start = new Date();
-  start.setDate(start.getDate() + 14);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 2);
-  const toISO = (d: Date) => d.toISOString().slice(0, 10);
-
-  const { data: trip, error: tripError } = await supabase
-    .from('trips')
-    .insert({
-      group_id: groupId,
-      title: '大阪ぐるっと2泊3日',
-      start_date: toISO(start),
-      end_date: toISO(end),
-      area_lat: 34.6937,
-      area_lng: 135.5023,
-      created_by: user.id,
-      is_public: false,
-    })
-    .select('id, public_share_token')
-    .single();
-
-  if (tripError) throw tripError;
-
-  const item = (
-    dayIndex: number,
-    orderIndex: number,
-    placeName: string | null,
-    extra: Record<string, unknown> = {},
-  ) => ({
-    trip_id: trip.id,
-    day_index: dayIndex,
-    order_index: orderIndex,
-    place_id: placeName ? (idByName.get(placeName) ?? null) : null,
-    ...extra,
-  });
-
-  await supabase.from('trip_items').insert([
-    item(0, 0, null, { custom_title: '新大阪駅に到着', arrive_time: '10:30', transport: 'transit', memo: 'コインロッカーに荷物を預ける' }),
-    item(0, 1, '梅田スカイビル 空中庭園展望台', { arrive_time: '11:30', stay_minutes: 60, transport: 'walk' }),
-    item(0, 2, '中之島公園', { arrive_time: '13:30', stay_minutes: 45, transport: 'walk' }),
-    item(0, 3, '大阪城', { arrive_time: '15:00', stay_minutes: 90, transport: 'transit' }),
-    item(0, 4, '北新地 お初天神通り', { arrive_time: '18:30', stay_minutes: 120, transport: 'transit', memo: '予約した方が安心' }),
-
-    item(1, 0, 'ユニバーサル・スタジオ・ジャパン', { arrive_time: '08:30', stay_minutes: 480, transport: 'transit', memo: '朝イチで入場' }),
-    item(1, 1, '道頓堀', { arrive_time: '18:00', stay_minutes: 90, transport: 'transit' }),
-    item(1, 2, '串カツ だるま 新世界総本店', { arrive_time: '20:00', stay_minutes: 60, transport: 'walk' }),
-
-    item(2, 0, '黒門市場', { arrive_time: '09:30', stay_minutes: 60, transport: 'walk', memo: '朝ごはんは market で' }),
-    item(2, 1, '通天閣', { arrive_time: '11:00', stay_minutes: 45, transport: 'walk' }),
-    item(2, 2, '海遊館', { arrive_time: '13:00', stay_minutes: 120, transport: 'transit' }),
-    item(2, 3, null, { custom_title: '新大阪駅から帰る', arrive_time: '17:30', transport: 'transit' }),
-  ]);
-
-  await supabase.from('trip_checklist').insert(
-    ['充電器', 'モバイルバッテリー', '歩きやすい靴', '折りたたみ傘', '常備薬', 'USJのチケット'].map((label, i) => ({
-      trip_id: trip.id,
-      label,
-      order_index: i,
-      checked: i < 2,
-    })),
-  );
-
-  await supabase.from('trip_budget_items').insert([
-    { trip_id: trip.id, label: '新幹線（往復）', amount: 28000, category: '交通', order_index: 0 },
-    { trip_id: trip.id, label: 'ホテル 2泊', amount: 24000, category: '宿泊', order_index: 1 },
-    { trip_id: trip.id, label: 'USJ チケット', amount: 8600, category: '入場料', order_index: 2 },
-    { trip_id: trip.id, label: '食事代（目安）', amount: 15000, category: '食事', order_index: 3 },
-    { trip_id: trip.id, label: 'おみやげ', amount: 5000, category: 'おみやげ', order_index: 4 },
-  ]);
-
-  console.log('✓ サンプル旅行「大阪ぐるっと2泊3日」');
   console.log('');
   console.log('🎉 シード投入が完了しました。アプリを開いて「サンプル: 行きたい場所」グループを選んでください。');
 }

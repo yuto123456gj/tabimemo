@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils/cn';
 
 /** 空状態のイラスト（オリジナル。線画＋ブランドカラー） */
-type Art = 'pin' | 'trip' | 'map' | 'group' | 'search';
+type Art = 'pin' | 'map' | 'group' | 'search';
 
 function Illustration({ art }: { art: Art }) {
   const common = {
@@ -15,17 +15,6 @@ function Illustration({ art }: { art: Art }) {
   const accent = 'stroke-accent-400 dark:stroke-accent-500';
   const fill = 'fill-brand-100 dark:fill-brand-900/40';
 
-  if (art === 'trip') {
-    return (
-      <svg {...common}>
-        <rect x="26" y="34" width="80" height="52" rx="10" className={cn(fill, stroke)} strokeWidth="2" />
-        <path d="M26 50h80" className={stroke} strokeWidth="2" />
-        <path d="M52 34V24a6 6 0 0 1 6-6h16a6 6 0 0 1 6 6v10" className={stroke} strokeWidth="2" strokeLinecap="round" />
-        <path d="M60 66h12M60 74h22" className={accent} strokeWidth="2" strokeLinecap="round" />
-        <circle cx="46" cy="70" r="5" className={accent} strokeWidth="2" />
-      </svg>
-    );
-  }
   if (art === 'map') {
     return (
       <svg {...common}>

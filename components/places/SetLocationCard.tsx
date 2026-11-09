@@ -57,7 +57,7 @@ export function SetLocationCard({ placeId, placeName }: { placeId: string; place
         <h3 className="text-sm font-bold text-ink-900 dark:text-ink-50">場所がまだ決まっていません</h3>
       </div>
       <p className="text-xs leading-relaxed text-ink-500 dark:text-ink-400">
-        場所を決めると、地図に表示され、しおりのルート計算にも使えるようになります。
+        場所を決めると、地図にピンが立ち、現在地からの距離も出るようになります。
       </p>
 
       {error && <Notice tone="error">{error}</Notice>}

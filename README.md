@@ -1,8 +1,8 @@
 # タビメモ（Tabimemo）
 
-> 行きたい場所を貯めて、そのまま旅のしおりに。
+> 行きたい場所を貯めて、そのまま地図に。
 
-気になったお店や景色を保存して、日程（しおり）に組み込み、**1日の立ち寄り順を最短ルートに自動で並べ替える**ところまでを1つのアプリで完結させる、スマホ優先の旅行メモアプリです。カップル・友だち・家族で、ひとつのリストを一緒に育てられます。
+気になったお店や景色を保存すると、**その場所に地図のピンが立つ**。ピンをタップすれば、それが何だったかをすぐ思い出せる。スマホ優先の、場所メモアプリです。カップル・友だち・家族で、ひとつのリストを一緒に育てられます。
 
 アプリ名は `lib/constants.ts` の `APP_NAME` / `APP_NAME_JA` の2か所だけで管理しているので、あとから自由に変えられます。
 
@@ -56,24 +56,11 @@
 - 営業期間を入れた期間限定スポットは、**開始・終了の1週間前に全員へリマインド**
 - 「誰が追加したか」を表示
 
-### しおり（旅程）
-- タイトル・期間・カバー画像で旅行を作成
-- **保存済みスポットから選んで日程に追加**。旅行先エリアを設定しておくと、近くのスポットを「おすすめ候補」として上に出します
-- 日ごとのタイムライン: 到着時刻・滞在時間・メモ・移動手段
-- 並べ替えはドラッグ&ドロップ（PC）と、↑↓ボタン・「◯日目へ」セレクト（スマホ）の両対応。日をまたぐ移動もできます
-- 宿泊先・集合場所などスポット以外のフリー項目も追加可能
-- 持ち物チェックリスト、予算メモ（合計と1人あたりを自動計算）
-- **共有用の閲覧ページ**: ログイン不要の読み取り専用URL（ON/OFF切替）。印刷用CSS付きで紙のしおりにもできます
-- 旅行が終わったら、しおりのスポットを一括で「行った！」に
-
-### ルート自動最適化
-- 1日分の「最短ルートに並べ替え」ボタン。**確定前にプレビュー**を見せ、元に戻せます
-- 出発地・到着地を固定できます（ホテル発→空港着など）
-- 距離行列は OSRM（道路距離）、失敗時はハーバサイン（直線距離 × 迂回係数）に自動フォールバック
-- 最近傍法で初期解 → 2-opt で改善。15地点で実測 1〜10ms（1秒以内の要件を十分に満たします）
-- 徒歩／車を選択でき、区間ごとの距離・所要時間と1日の合計を表示
-- 地図に番号付きピンとルート線を描画
-- 「Googleマップで開く」でその順番の経路URLを開けます
+### 地図でまとめて見る
+- 保存したスポットが、**その場所にピンとして立ちます**（「行った！」は色が変わります）
+- ピンをタップすると、写真・カテゴリ・営業時間・メモ・評価が下のカードに出ます。そのまま詳細画面へ
+- ステータスとカテゴリで絞り込み。現在地を出すと、選んだスポットまでの距離も表示されます
+- 場所が未設定のスポットは地図に出ません（詳細画面から地図をタップすると設定できます）
 
 ---
 
@@ -87,8 +74,8 @@
 | 地図 | MapLibre GL JS + OpenStreetMap ラスタータイル（APIキー不要） |
 | 場所検索 | Nominatim（既定）/ Google Places API (New)（キーがあれば自動切替） |
 | SNS抽出 | ルールベース（既定）/ Claude API（キーがあれば自動切替） |
-| ルート計算 | 自前実装（最近傍法 + 2-opt）、距離行列は OSRM → ハーバサイン |
-| テスト | Vitest（ロジックの単体テスト 86件） |
+| 通知 | Web Push（VAPID / web-push）+ Vercel Cron |
+| テスト | Vitest（ロジックの単体テスト 52件） |
 | PWA | manifest + Service Worker（ホーム画面に追加できます） |
 
 **APIキーが未設定でもアプリは落ちません。** 外部サービスは `lib/providers/` 以下にインターフェースを切ってあり、実装を差し替えられます。
@@ -186,14 +173,10 @@ supabase db push
 | `place_reviews` | 「行った」記録（**メンバーごと**） |
 | `lists` / `list_places` | リスト（多対多） |
 | `tags` / `place_tags` | タグ（多対多） |
-| `trips` / `trip_items` | しおり本体と日程の項目 |
-| `trip_checklist` / `trip_budget_items` | 持ち物・予算 |
 | `push_subscriptions` | プッシュ通知の送信先（**端末ごと**。行があれば通知ON） |
 | `place_reminders` | 期間限定スポットのリマインダー送信記録（重複送信の防止） |
 
 **全テーブルで RLS を有効化**し、「そのグループのメンバーだけが読み書きできる」ポリシーを設定しています。`group_members` を直接参照すると再帰するため、`is_group_member()` などの `security definer` 関数を経由しています。
-
-共有閲覧ページは **RLSを緩めず**、`get_public_trip(share_token)` という `security definer` 関数経由で `is_public = true` のしおりだけを匿名公開します。招待の受け入れも同様に `accept_group_invite(token)` 経由です。
 
 サインアップ時のトリガー（`handle_new_user`）が、プロフィールと「わたしの行きたい場所」グループを自動作成します。
 
@@ -256,6 +239,8 @@ npm run vapid
 | --- | --- |
 | 開始日の1週間前 | ⏳ あと1週間で始まります |
 | 終了日の1週間前 | ⏳ あと1週間で終わります（行くなら今のうち！） |
+
+すでに「✅ 行った！」にしたスポットには、終了のお知らせは送りません。
 
 使うには、上記に加えて次の3つが必要です。
 
@@ -363,44 +348,39 @@ npm run seed -- you@example.com
 app/
   (app)/                    ログイン必須の画面（上部バー＋下部タブ付き）
     places/                 一覧・地図 / 追加 / 詳細
-    trips/                  しおり一覧 / 作成 / 編集
+    map/                    保存したスポットを地図にまとめて表示
     groups/  settings/
   api/                      外部API呼び出しはすべてここ（サーバー側）
     places/search           場所検索（Nominatim / Google）
     places/photo            Google写真の中継（キーを隠すため）
     extract                 テキストからの場所抽出（現在は画面から未使用）
     cron/reminders          期間限定スポットの1週間前リマインダー（毎日1回）
-    route/matrix            距離行列＋ルート最適化
     health                  設定状況の確認
   auth/callback             OAuth / マジックリンクの着地点
-  s/[token]                 しおりの共有閲覧ページ（ログイン不要・印刷対応）
   login/  layout.tsx  page.tsx（LP or ホーム）
 
 components/
   ui/        Button, Card, EmptyState, Icons, StarRating, Feedback
   layout/    TopBar, BottomNav, AppShell, Landing, GroupSwitcher, RealtimeRefresh …
   places/    PlaceCard, PlacesExplorer, AddPlaceTabs, SearchTab, SnsTab, ImportTab …
-  trips/     TripEditor, TripItemRow, AddToDayPanel, RoutePanel, Checklist, Budget …
-  map/       MapView（MapLibre）, MapContainer（遅延読み込み）, mapStyle
+  map/       SpotsMap（地図ページ本体）, MapView（MapLibre）, MapContainer（遅延読み込み）, mapStyle
 
 lib/
-  constants.ts              アプリ名・カテゴリ・移動手段などの定義
+  constants.ts              アプリ名・カテゴリ・ステータスの定義
   env.ts                    環境変数の読み取り（未設定でも落ちない）
   supabase/                 client / server / admin / middleware
   providers/
     places/                 nominatim.ts, google.ts, index.ts（自動切替）
     extract/                rule.ts, claude.ts, index.ts（自動切替）
-    routing/                osrm.ts, haversine.ts, index.ts（フォールバック）
-  route/                    optimize.ts（最近傍法＋2-opt）, geo.ts, googleMaps.ts
+  route/                    geo.ts（距離計算）, googleMaps.ts（地図で開くURL）
   notify/push.ts            Webプッシュの送信（web-push / VAPID）
-  trips/reorder.ts          日程の並べ替えロジック（純粋関数）
-  utils/                    date, cn, ratelimit
+  utils/                    date, cn, ratelimit, hours, place
   data/                     Server Component用のデータ取得
-  actions/                  Server Actions（places / trips / groups / auth / notifications）
+  actions/                  Server Actions（places / groups / auth / notifications）
 
 supabase/migrations/        0001_init.sql, 0002_rls.sql, 0003_storage.sql
 scripts/                    seed.ts, vapid.ts, generate-icons.mjs
-tests/                      route / trips / utils / notify の単体テスト
+tests/                      utils / notify の単体テスト
 public/                     manifest.webmanifest, sw.js, offline.html, icons/
 ```
 
@@ -412,34 +392,30 @@ public/                     manifest.webmanifest, sw.js, offline.html, icons/
 npm test
 ```
 
-外部通信を伴わない純粋関数を対象にしています（81件）。
+外部通信を伴わない純粋関数を対象にしています（52件）。
 
 | ファイル | 内容 |
 | --- | --- |
-| `tests/route/optimize.test.ts` | **総距離が単純な入力順より短くなること**、**開始・終了の固定が守られること**、全地点をちょうど1回ずつ通ること、15地点が1秒以内に終わること、提案が元より悪化しないこと |
-| `tests/trips/reorder.test.ts` | 上下移動 / 日をまたぐ移動 / ドラッグ&ドロップ / 最適化結果の適用 / 保存すべき差分の抽出 |
 | `tests/utils/extract.test.ts` | SNSキャプションからの店名・エリア・カテゴリ・タグの抽出 |
-| `tests/utils/date.test.ts` | 日本語の日付表記、旅程の日付計算、タイムゾーンずれの防止 |
+| `tests/utils/date.test.ts` | 日本語の日付表記、タイムゾーンずれの防止 |
 | `tests/utils/hours.test.ts` | 営業時間・営業期間の表示と判定（深夜営業の日またぎを含む） |
+| `tests/utils/categories.test.ts` | OSM / Google の種別からカテゴリへの振り分け |
+| `tests/notify/push.test.ts` | 「○○さんが追加しました」通知の文面 |
+| `tests/notify/reminders.test.ts` | 1週間前リマインダーの文面、送る/送らないの判定、日本時間での日付計算 |
 
 ---
 
 ## 設計メモ
 
 ### セキュリティ
-- **APIキーはクライアントに出しません。** 外部API（Nominatim / Google Places / OSRM / Anthropic）の呼び出しはすべて Route Handler か Server Action で行います。Google の写真も `/api/places/photo` で中継し、キーを隠しています
+- **APIキーはクライアントに出しません。** 外部API（Nominatim / Google Places / Anthropic）の呼び出しはすべて Route Handler か Server Action で行います。Google の写真も `/api/places/photo` で中継し、キーを隠しています
 - `NEXT_PUBLIC_` が付くのは Supabase の URL と anon キーのみです（どちらも公開前提で、保護はRLSが担います）
-- 共有閲覧ページは RLS を緩めず、`security definer` のRPC経由で公開対象だけを返します
 - APIルートには簡易レートリミット（トークンバケット）を入れています
 
 ### 外部サービスへの配慮
 - Nominatim には連絡先入りのUser-Agentを付け、**1リクエスト/秒に直列化**（`lib/utils/ratelimit.ts` の `throttle`）、同じ検索語は1時間キャッシュします
 - InstagramやTikTokのページは**スクレイピングしません**。ユーザーが貼り付けたテキストとURLだけを使います
-- OSRM の公開デモサーバーは一度に25地点までに制限しています
-
-### ルート最適化
-`lib/route/optimize.ts` は副作用のない純粋関数です。距離行列を受け取り、最近傍法で初期解を作って 2-opt で改善します。固定された出発地・到着地は2-optの対象範囲から外すことで守られます。地点数が15程度と小さいため、各入れ替えで総コストを素直に数え直す実装にしています（可読性優先。実測で十分高速）。
 
 ---
 
-地図データ © OpenStreetMap contributors / 経路計算 OSRM
+地図データ © OpenStreetMap contributors

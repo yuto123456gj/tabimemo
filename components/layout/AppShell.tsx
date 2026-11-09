@@ -21,7 +21,7 @@ export function AppShell({
         {!isSupabaseConfigured() && (
           <Notice tone="warn" className="mb-4">
             Supabase がまだ設定されていません。<code className="mx-1 rounded bg-black/5 px-1">.env.local</code>
-            に接続情報を入れると、保存・共有・しおりが使えるようになります（README参照）。
+            に接続情報を入れると、保存・共有・地図が使えるようになります（README参照）。
           </Notice>
         )}
         {children}

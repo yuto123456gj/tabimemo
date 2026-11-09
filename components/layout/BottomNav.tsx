@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
-import { IconBook, IconHome, IconPin, IconPlus, IconSettings } from '@/components/ui/Icons';
+import { IconHome, IconMap, IconPin, IconPlus, IconSettings } from '@/components/ui/Icons';
 
 const ITEMS = [
   { href: '/', label: 'ホーム', Icon: IconHome },
   { href: '/places', label: 'スポット', Icon: IconPin },
   { href: '/places/new', label: '追加', Icon: IconPlus, primary: true },
-  { href: '/trips', label: 'しおり', Icon: IconBook },
+  { href: '/map', label: '地図', Icon: IconMap },
   { href: '/settings', label: '設定', Icon: IconSettings },
 ];
 

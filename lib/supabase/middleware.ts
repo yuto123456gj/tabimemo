@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { isSupabaseConfigured, supabaseCredentials } from '@/lib/env';
 
 /** ログイン必須のパス（prefix 一致） */
-const PROTECTED_PREFIXES = ['/places', '/trips', '/groups', '/settings'];
+const PROTECTED_PREFIXES = ['/places', '/map', '/groups', '/settings'];
 /** ログイン不要のパス */
 const PUBLIC_PREFIXES = ['/', '/login', '/auth', '/s/', '/api/health'];
 

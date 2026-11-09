@@ -1,7 +1,7 @@
 {
   "name": "タビメモ（Tabimemo）",
   "short_name": "タビメモ",
-  "description": "行きたい場所を貯めて、そのまま旅のしおりとルートに。",
+  "description": "行きたい場所を貯めて、そのまま地図とメモに。",
   "lang": "ja",
   "dir": "ltr",
   "start_url": "/",
@@ -54,9 +54,9 @@
       ]
     },
     {
-      "name": "しおりを見る",
-      "short_name": "しおり",
-      "url": "/trips",
+      "name": "地図で見る",
+      "short_name": "地図",
+      "url": "/map",
       "icons": [
         {
           "src": "/icons/icon-192.png",

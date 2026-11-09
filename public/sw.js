@@ -5,7 +5,7 @@
  * - API・認証・Supabaseへの通信はキャッシュしない（常に最新を取る）
  * - プッシュ通知の受信と、タップしたときの画面移動
  */
-const VERSION = 'tabimemo-v2';
+const VERSION = 'tabimemo-v3';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const OFFLINE_URL = '/offline.html';
@@ -42,8 +42,6 @@ function shouldBypass(url) {
   return (
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/auth/') ||
-    url.pathname.startsWith('/s/') ||
-    url.pathname.startsWith('/invite/') ||
     url.origin !== self.location.origin
   );
 }
