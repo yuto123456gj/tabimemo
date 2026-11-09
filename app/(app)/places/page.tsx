@@ -9,8 +9,18 @@ import { getActiveGroup } from '@/lib/data/session';
 
 export const metadata: Metadata = { title: 'スポット' };
 
-export default async function PlacesPage() {
-  const group = await getActiveGroup();
+/** ホームの「行きたい」「行った！」から来たときは、その絞り込みで開く */
+function initialStatusFrom(value: string | string[] | undefined): 'all' | 'want' | 'visited' {
+  return value === 'want' || value === 'visited' ? value : 'all';
+}
+
+export default async function PlacesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string | string[] }>;
+}) {
+  const [group, params] = await Promise.all([getActiveGroup(), searchParams]);
+  const status = initialStatusFrom(params.status);
 
   if (!group) {
     return (
@@ -46,7 +56,14 @@ export default async function PlacesPage() {
       >
         {group.name}
       </SectionTitle>
-      <PlacesExplorer places={places} tags={tags} lists={lists} />
+      {/* key を付けて、?status= が変わったら絞り込みを初期値から作り直す */}
+      <PlacesExplorer
+        key={status}
+        places={places}
+        tags={tags}
+        lists={lists}
+        initialStatus={status}
+      />
     </div>
   );
 }

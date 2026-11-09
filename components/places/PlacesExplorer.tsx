@@ -29,13 +29,16 @@ export function PlacesExplorer({
   places,
   tags,
   lists,
+  initialStatus = 'all',
 }: {
   places: PlaceWithExtras[];
   tags: Tag[];
   lists: PlaceList[];
+  /** ホームの「行きたい」「行った！」から来たときの初期絞り込み */
+  initialStatus?: StatusFilter;
 }) {
   const [view, setView] = useState<View>('list');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const [status, setStatus] = useState<StatusFilter>(initialStatus);
   const [category, setCategory] = useState<string | null>(null);
   const [tagId, setTagId] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(null);

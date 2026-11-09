@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { Landing } from '@/components/layout/Landing';
 import { ButtonLink } from '@/components/ui/Button';
-import { Card, SectionTitle } from '@/components/ui/Card';
+import { SectionTitle } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PlaceCard } from '@/components/places/PlaceCard';
 import { TripCard } from '@/components/trips/TripCard';
@@ -56,14 +56,20 @@ export default async function HomePage() {
           <>
             {/* サマリー */}
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Card className="p-4">
+              <Link
+                href="/places?status=want"
+                className="card p-4 transition hover:-translate-y-0.5 hover:shadow-lift"
+              >
                 <p className="text-xs text-ink-500 dark:text-ink-400">行きたい</p>
                 <p className="mt-1 text-2xl font-extrabold text-brand-600 dark:text-brand-300">{counts.want}</p>
-              </Card>
-              <Card className="p-4">
+              </Link>
+              <Link
+                href="/places?status=visited"
+                className="card p-4 transition hover:-translate-y-0.5 hover:shadow-lift"
+              >
                 <p className="text-xs text-ink-500 dark:text-ink-400">行った！</p>
                 <p className="mt-1 text-2xl font-extrabold text-accent-600 dark:text-accent-300">{counts.visited}</p>
-              </Card>
+              </Link>
               <Link
                 href="/places/new"
                 className="card flex items-center gap-2 p-4 transition hover:-translate-y-0.5 hover:shadow-lift"
