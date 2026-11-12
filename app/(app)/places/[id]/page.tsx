@@ -9,7 +9,7 @@ import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { Badge, Card, SectionTitle } from '@/components/ui/Card';
 import { StarRating } from '@/components/ui/StarRating';
 import { IconChevronRight, IconClock, IconLink, IconMap } from '@/components/ui/Icons';
-import { categoryMeta } from '@/lib/constants';
+import { placeCategoryMeta } from '@/lib/utils/category';
 import { getPlace, listLists } from '@/lib/data/places';
 import { getCurrentUser, getGroupMembers } from '@/lib/data/session';
 import { formatJaDate, relativeFromNow } from '@/lib/utils/date';
@@ -38,7 +38,7 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
 
   const tags = (place.place_tags ?? []).map((pt) => pt.tags?.name).filter(Boolean) as string[];
   const memberListIds = (place.list_places ?? []).map((lp) => lp.list_id);
-  const meta = categoryMeta(place.category);
+  const meta = placeCategoryMeta(place);
 
   const openingHours = formatOpeningHours(place);
   const openingPeriod = formatOpeningPeriod(place);

@@ -7,12 +7,13 @@ import { Badge } from '@/components/ui/Card';
 import { StarRating } from '@/components/ui/StarRating';
 import { IconChevronRight, IconPin } from '@/components/ui/Icons';
 import { placeAverageRating } from '@/components/places/PlaceCard';
-import { PLACE_CATEGORIES, categoryMeta } from '@/lib/constants';
+
 import { formatDistance, haversineDistance } from '@/lib/route/geo';
 import { formatOpeningHours } from '@/lib/utils/hours';
+import { placeCategoryMeta } from '@/lib/utils/category';
 import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
-import type { PlaceWithExtras } from '@/types/database';
+import type { PlaceCategoryRow, PlaceWithExtras } from '@/types/database';
 
 type StatusFilter = 'all' | 'want' | 'visited';
 
@@ -20,7 +21,13 @@ type StatusFilter = 'all' | 'want' | 'visited';
  * 保存したスポットを地図にまとめて出す。
  * ピンをタップすると、そのスポットが何なのかを下のカードに表示する。
  */
-export function SpotsMap({ places }: { places: PlaceWithExtras[] }) {
+export function SpotsMap({
+  places,
+  categories,
+}: {
+  places: PlaceWithExtras[];
+  categories: PlaceCategoryRow[];
+}) {
   const [status, setStatus] = useState<StatusFilter>('all');
   const [category, setCategory] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -108,9 +115,9 @@ export function SpotsMap({ places }: { places: PlaceWithExtras[] }) {
           >
             全カテゴリ
           </button>
-          {PLACE_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
-              key={c.value}
+              key={c.id}
               type="button"
               onClick={() => setCategory(category === c.value ? null : c.value)}
               className={cn('chip shrink-0', category === c.value && 'chip-active')}
@@ -163,7 +170,7 @@ function SelectedCard({
   place: PlaceWithExtras;
   myLocation: { lat: number; lng: number } | null;
 }) {
-  const meta = categoryMeta(place.category);
+  const meta = placeCategoryMeta(place);
   const rating = placeAverageRating(place);
   const hours = formatOpeningHours(place);
 

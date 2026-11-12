@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Card';
 import { StarRating } from '@/components/ui/StarRating';
-import { categoryMeta } from '@/lib/constants';
+import { placeCategoryMeta } from '@/lib/utils/category';
 import { formatJaDateShort } from '@/lib/utils/date';
 import { formatDistance } from '@/lib/route/geo';
 import { cn } from '@/lib/utils/cn';
@@ -21,13 +21,12 @@ export function placeWantAgain(place: PlaceWithExtras): boolean {
   return (place.place_reviews ?? []).some((r) => r.want_again);
 }
 
-/** 写真が無いスポット用の背景（カテゴリごとに色味を変える） */
-function PhotoPlaceholder({ category }: { category: string | null }) {
-  const meta = categoryMeta(category);
+/** 写真が無いスポット用の背景（カテゴリの絵文字を出す） */
+function PhotoPlaceholder({ emoji }: { emoji: string }) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-sky-gradient dark:bg-ink-800">
       <span className="text-3xl" aria-hidden="true">
-        {meta.emoji}
+        {emoji}
       </span>
     </div>
   );
@@ -42,7 +41,7 @@ export function PlaceCard({
   distanceMeters?: number | null;
   className?: string;
 }) {
-  const meta = categoryMeta(place.category);
+  const meta = placeCategoryMeta(place);
   const rating = placeAverageRating(place);
   const tags = (place.place_tags ?? []).map((pt) => pt.tags?.name).filter(Boolean) as string[];
 
@@ -65,7 +64,7 @@ export function PlaceCard({
             loading="lazy"
           />
         ) : (
-          <PhotoPlaceholder category={place.category} />
+          <PhotoPlaceholder emoji={meta.emoji} />
         )}
         {place.status === 'visited' && (
           <span className="absolute left-1.5 top-1.5 rounded-pill bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">

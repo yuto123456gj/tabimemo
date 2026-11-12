@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
 import { SectionTitle } from '@/components/ui/Card';
 import { IconPin } from '@/components/ui/Icons';
-import { listPlaces } from '@/lib/data/places';
+import { listPlaceCategories, listPlaces } from '@/lib/data/places';
 import { getActiveGroup } from '@/lib/data/session';
 
 export const metadata: Metadata = { title: '地図' };
@@ -24,11 +24,19 @@ export default async function MapPage() {
     );
   }
 
-  const places = await listPlaces(group.id, { status: 'all' });
+  const [places, categories] = await Promise.all([
+    listPlaces(group.id, { status: 'all' }),
+    listPlaceCategories(group.id),
+  ]);
 
   return (
     <div>
-      <RealtimeRefresh channels={[{ table: 'places', filter: `group_id=eq.${group.id}` }]} />
+      <RealtimeRefresh
+        channels={[
+          { table: 'places', filter: `group_id=eq.${group.id}` },
+          { table: 'place_categories', filter: `group_id=eq.${group.id}` },
+        ]}
+      />
       <SectionTitle
         action={
           <ButtonLink href="/places/new" size="sm">
@@ -52,7 +60,7 @@ export default async function MapPage() {
           }
         />
       ) : (
-        <SpotsMap places={places} />
+        <SpotsMap places={places} categories={categories} />
       )}
     </div>
   );

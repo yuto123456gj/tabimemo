@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SearchTab } from '@/components/places/SearchTab';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
-import { listLists } from '@/lib/data/places';
+import { listLists, listPlaceCategories } from '@/lib/data/places';
 import { getActiveGroup } from '@/lib/data/session';
 
 export const metadata: Metadata = { title: 'スポットを追加' };
@@ -31,7 +31,7 @@ export default async function NewPlacePage({
     );
   }
 
-  const lists = await listLists(group.id);
+  const [lists, categories] = await Promise.all([listLists(group.id), listPlaceCategories(group.id)]);
 
   return (
     <div>
@@ -45,7 +45,7 @@ export default async function NewPlacePage({
         </p>
       </div>
 
-      <SearchTab groupId={group.id} lists={lists} initialQuery={params.q ?? ''} />
+      <SearchTab groupId={group.id} lists={lists} categories={categories} initialQuery={params.q ?? ''} />
     </div>
   );
 }

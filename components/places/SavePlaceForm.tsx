@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { MapContainer } from '@/components/map/MapContainer';
 import { Button } from '@/components/ui/Button';
 import { Notice, Spinner } from '@/components/ui/Feedback';
-import { PLACE_CATEGORIES } from '@/lib/constants';
+import { CategoryPicker } from './CategoryPicker';
 import { EMPTY_OPENING, OpeningFields, type OpeningValues } from './OpeningFields';
 import { createPlace } from '@/lib/actions/places';
 import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
-import type { PlaceList } from '@/types/database';
+import type { PlaceCategoryRow, PlaceList } from '@/types/database';
 
 export interface DraftPlace {
   name: string;
@@ -31,16 +31,21 @@ export function SavePlaceForm({
   draft,
   groupId,
   lists,
+  categories,
   onCancel,
 }: {
   draft: DraftPlace;
   groupId: string;
   lists: PlaceList[];
+  categories: PlaceCategoryRow[];
   onCancel?: () => void;
 }) {
   const router = useRouter();
   const [name, setName] = useState(draft.name);
-  const [category, setCategory] = useState(draft.category ?? 'other');
+  // 候補から来たカテゴリがグループに無い（消された）場合は未選択にする
+  const [category, setCategory] = useState<string | null>(
+    categories.some((c) => c.value === draft.category) ? draft.category : null,
+  );
   const [memo, setMemo] = useState(draft.memo ?? '');
   const [plannedDate, setPlannedDate] = useState('');
   const [sourceUrl, setSourceUrl] = useState(draft.sourceUrl ?? '');
@@ -119,21 +124,12 @@ export function SavePlaceForm({
         <input id="place-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
-      <div>
-        <span className="label">カテゴリ</span>
-        <div className="flex flex-wrap gap-2">
-          {PLACE_CATEGORIES.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => setCategory(c.value)}
-              className={cn('chip', category === c.value && 'chip-active')}
-            >
-              {c.emoji} {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <CategoryPicker
+        groupId={groupId}
+        categories={categories}
+        value={category}
+        onChange={setCategory}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>

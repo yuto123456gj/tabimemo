@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/Card';
 import { ButtonLink } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { IconChevronRight, IconList, IconMap, IconPin, IconSearch } from '@/components/ui/Icons';
-import { PLACE_CATEGORIES, categoryMeta } from '@/lib/constants';
+import { placeCategoryMeta } from '@/lib/utils/category';
 import { haversineDistance, formatDistance } from '@/lib/route/geo';
 import { hasLocation } from '@/lib/utils/place';
 import { cn } from '@/lib/utils/cn';
-import type { PlaceList, PlaceWithExtras, Tag } from '@/types/database';
+import type { PlaceCategoryRow, PlaceList, PlaceWithExtras, Tag } from '@/types/database';
 
 type View = 'list' | 'map';
 type Sort = 'created' | 'near' | 'planned' | 'rating';
@@ -29,11 +29,13 @@ export function PlacesExplorer({
   places,
   tags,
   lists,
+  categories,
   initialStatus = 'all',
 }: {
   places: PlaceWithExtras[];
   tags: Tag[];
   lists: PlaceList[];
+  categories: PlaceCategoryRow[];
   /** ホームの「行きたい」「行った！」から来たときの初期絞り込み */
   initialStatus?: StatusFilter;
 }) {
@@ -220,9 +222,9 @@ export function PlacesExplorer({
           >
             全カテゴリ
           </button>
-          {PLACE_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
-              key={c.value}
+              key={c.id}
               type="button"
               onClick={() => setCategory(category === c.value ? null : c.value)}
               className={cn('chip shrink-0', category === c.value && 'chip-active')}
@@ -334,7 +336,7 @@ export function PlacesExplorer({
               className="card flex animate-fade-up items-center gap-3 p-3 transition hover:shadow-lift"
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sky-gradient text-xl dark:bg-ink-800">
-                {categoryMeta(selected.category).emoji}
+                {placeCategoryMeta(selected).emoji}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-bold text-ink-900 dark:text-ink-50">{selected.name}</span>
@@ -343,7 +345,7 @@ export function PlacesExplorer({
                     (hasLocation(selected) ? `${selected.lat.toFixed(4)}, ${selected.lng.toFixed(4)}` : '場所は未設定')}
                 </span>
                 <span className="mt-1 flex items-center gap-1.5">
-                  <Badge tone="brand">{categoryMeta(selected.category).label}</Badge>
+                  <Badge tone="brand">{placeCategoryMeta(selected).label}</Badge>
                   {myLocation && hasLocation(selected) && (
                     <Badge tone="neutral">
                       {formatDistance(haversineDistance(myLocation, { lat: selected.lat, lng: selected.lng }))}

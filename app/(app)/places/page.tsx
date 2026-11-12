@@ -4,7 +4,7 @@ import { RealtimeRefresh } from '@/components/layout/RealtimeRefresh';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
 import { SectionTitle } from '@/components/ui/Card';
-import { listLists, listPlaces, listTags } from '@/lib/data/places';
+import { listLists, listPlaceCategories, listPlaces, listTags } from '@/lib/data/places';
 import { getActiveGroup } from '@/lib/data/session';
 
 export const metadata: Metadata = { title: 'スポット' };
@@ -33,10 +33,11 @@ export default async function PlacesPage({
     );
   }
 
-  const [places, tags, lists] = await Promise.all([
+  const [places, tags, lists, categories] = await Promise.all([
     listPlaces(group.id, { status: 'all' }),
     listTags(group.id),
     listLists(group.id),
+    listPlaceCategories(group.id),
   ]);
 
   return (
@@ -45,6 +46,7 @@ export default async function PlacesPage({
         channels={[
           { table: 'places', filter: `group_id=eq.${group.id}` },
           { table: 'place_reviews' },
+          { table: 'place_categories', filter: `group_id=eq.${group.id}` },
         ]}
       />
       <SectionTitle
@@ -62,6 +64,7 @@ export default async function PlacesPage({
         places={places}
         tags={tags}
         lists={lists}
+        categories={categories}
         initialStatus={status}
       />
     </div>

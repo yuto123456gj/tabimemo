@@ -99,6 +99,18 @@ export interface PlaceTag {
   tag_id: string;
 }
 
+/** グループごとのカテゴリ（自分で追加・削除できる） */
+export interface PlaceCategoryRow {
+  id: string;
+  group_id: string;
+  /** places.category に入る文字列 */
+  value: string;
+  label: string;
+  emoji: string;
+  sort_order: number;
+  created_at: string;
+}
+
 /** プッシュ通知の購読先（端末ごとに1行。行があれば通知ON） */
 export interface PushSubscriptionRow {
   id: string;
@@ -113,6 +125,8 @@ export interface PushSubscriptionRow {
 
 /** 画面で使う結合済みの型 */
 export type PlaceWithExtras = Place & {
+  /** グループのカテゴリ設定から引いた表示用の情報（無ければ既定の「その他」扱い） */
+  category_meta?: { label: string; emoji: string } | null;
   place_reviews?: PlaceReview[] | null;
   place_tags?: { tag_id: string; tags?: Tag | null }[] | null;
   list_places?: { list_id: string }[] | null;

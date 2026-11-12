@@ -9,15 +9,17 @@ import { IconSearch } from '@/components/ui/Icons';
 import { categoryMeta } from '@/lib/constants';
 import { SavePlaceForm, type DraftPlace } from './SavePlaceForm';
 import type { PlaceCandidate } from '@/lib/providers/places/types';
-import type { PlaceList } from '@/types/database';
+import type { PlaceCategoryRow, PlaceList } from '@/types/database';
 
 export function SearchTab({
   groupId,
   lists,
+  categories,
   initialQuery = '',
 }: {
   groupId: string;
   lists: PlaceList[];
+  categories: PlaceCategoryRow[];
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
@@ -57,7 +59,13 @@ export function SearchTab({
   };
 
   if (draft) {
-    return <SavePlaceForm draft={draft} groupId={groupId} lists={lists} onCancel={() => setDraft(null)} />;
+    return <SavePlaceForm
+        draft={draft}
+        groupId={groupId}
+        lists={lists}
+        categories={categories}
+        onCancel={() => setDraft(null)}
+      />;
   }
 
   return (

@@ -39,6 +39,9 @@
 
 > SNSの投稿ページを自動で取得して店名を抜き出すことはしません。各サービスの規約に反するうえ、
 > 仕様変更で頻繁に壊れるためです。
+- **カテゴリは自分で増やせます。** 追加画面の「＋ 追加」で名前とアイコンを決めるだけ。
+  カテゴリを**長押しすると削除**できます（そのカテゴリだったスポットは「その他」に戻り、スポット自体は消えません）。
+  最初から入っている9個（ごはん・カフェ…）も同じように消せます
 - ステータスは「行きたい／行った！」。評価・感想・「また行きたい」は**メンバーごとに個別**に記録
 - 1つのスポットを複数のリストに入れられます
 
@@ -173,6 +176,7 @@ supabase db push
 | `place_reviews` | 「行った」記録（**メンバーごと**） |
 | `lists` / `list_places` | リスト（多対多） |
 | `tags` / `place_tags` | タグ（多対多） |
+| `place_categories` | カテゴリ（**グループごと**。作成時に標準の9個が自動で入る） |
 | `push_subscriptions` | プッシュ通知の送信先（**端末ごと**。行があれば通知ON） |
 | `place_reminders` | 期間限定スポットのリマインダー送信記録（重複送信の防止） |
 
@@ -374,9 +378,9 @@ lib/
     extract/                rule.ts, claude.ts, index.ts（自動切替）
   route/                    geo.ts（距離計算）, googleMaps.ts（地図で開くURL）
   notify/push.ts            Webプッシュの送信（web-push / VAPID）
-  utils/                    date, cn, ratelimit, hours, place
+  utils/                    date, cn, ratelimit, hours, place, category
   data/                     Server Component用のデータ取得
-  actions/                  Server Actions（places / groups / auth / notifications）
+  actions/                  Server Actions（places / categories / groups / auth / notifications）
 
 supabase/migrations/        0001_init.sql, 0002_rls.sql, 0003_storage.sql
 scripts/                    seed.ts, vapid.ts, generate-icons.mjs
@@ -400,6 +404,7 @@ npm test
 | `tests/utils/date.test.ts` | 日本語の日付表記、タイムゾーンずれの防止 |
 | `tests/utils/hours.test.ts` | 営業時間・営業期間の表示と判定（深夜営業の日またぎを含む） |
 | `tests/utils/categories.test.ts` | OSM / Google の種別からカテゴリへの振り分け |
+| `tests/utils/category.test.ts` | 自分で作るカテゴリの入力チェックと、表示名の解決 |
 | `tests/notify/push.test.ts` | 「○○さんが追加しました」通知の文面 |
 | `tests/notify/reminders.test.ts` | 1週間前リマインダーの文面、送る/送らないの判定、日本時間での日付計算 |
 

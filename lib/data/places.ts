@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
-import type { PlaceWithExtras, PlaceList, Tag } from '@/types/database';
+import type { PlaceCategoryRow, PlaceWithExtras, PlaceList, Tag } from '@/types/database';
 
 export interface PlaceFilters {
   status?: 'want' | 'visited' | 'all';
@@ -46,6 +46,35 @@ async function attachAddedBy(
   }));
 }
 
+/**
+ * カテゴリの表示名・絵文字をひもづける。
+ * カテゴリはグループごとに増減するので、表示のたびに引き直す。
+ */
+async function attachCategoryMeta(
+  supabase: SupabaseClient,
+  places: PlaceWithExtras[],
+): Promise<PlaceWithExtras[]> {
+  const groupIds = Array.from(new Set(places.map((p) => p.group_id)));
+  if (groupIds.length === 0) return places;
+
+  const { data } = await supabase
+    .from('place_categories')
+    .select('group_id, value, label, emoji')
+    .in('group_id', groupIds);
+
+  const byKey = new Map(
+    ((data ?? []) as Pick<PlaceCategoryRow, 'group_id' | 'value' | 'label' | 'emoji'>[]).map((c) => [
+      `${c.group_id}:${c.value}`,
+      { label: c.label, emoji: c.emoji },
+    ]),
+  );
+
+  return places.map((p) => ({
+    ...p,
+    category_meta: p.category ? (byKey.get(`${p.group_id}:${p.category}`) ?? null) : null,
+  }));
+}
+
 export async function listPlaces(groupId: string, filters: PlaceFilters = {}): Promise<PlaceWithExtras[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createSupabaseServerClient();
@@ -74,7 +103,7 @@ export async function listPlaces(groupId: string, filters: PlaceFilters = {}): P
     return [];
   }
 
-  let places = await attachAddedBy(supabase, data as unknown as PlaceWithExtras[]);
+  let places = await attachCategoryMeta(supabase, await attachAddedBy(supabase, data as unknown as PlaceWithExtras[]));
 
   // 結合先での絞り込みはクライアント側で行う（RLS下でのJOINフィルタを単純に保つため）
   if (filters.tagId) {
@@ -107,8 +136,38 @@ export async function getPlace(placeId: string): Promise<PlaceWithExtras | null>
   }
   if (!data) return null;
 
-  const [place] = await attachAddedBy(supabase, [data as unknown as PlaceWithExtras]);
-  return place ?? null;
+  const withMeta = await attachCategoryMeta(supabase, await attachAddedBy(supabase, [data as unknown as PlaceWithExtras]));
+  return withMeta[0] ?? null;
+}
+
+/** グループのカテゴリ一覧（画面の並び順） */
+export async function listPlaceCategories(groupId: string): Promise<PlaceCategoryRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('place_categories')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('sort_order')
+    .order('created_at');
+
+  if (error) {
+    console.error('[listPlaceCategories] 取得に失敗しました:', error.message);
+    return [];
+  }
+  return (data as PlaceCategoryRow[] | null) ?? [];
+}
+
+/** そのカテゴリを使っているスポットの件数（削除の確認に出す） */
+export async function countPlacesInCategory(groupId: string, value: string): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
+  const supabase = await createSupabaseServerClient();
+  const { count } = await supabase
+    .from('places')
+    .select('id', { count: 'exact', head: true })
+    .eq('group_id', groupId)
+    .eq('category', value);
+  return count ?? 0;
 }
 
 export async function listTags(groupId: string): Promise<Tag[]> {
@@ -145,7 +204,10 @@ export async function recentPlaces(groupId: string, limit = 6): Promise<PlaceWit
     .eq('group_id', groupId)
     .order('created_at', { ascending: false })
     .limit(limit);
-  return attachAddedBy(supabase, (data as unknown as PlaceWithExtras[] | null) ?? []);
+  return attachCategoryMeta(
+    supabase,
+    await attachAddedBy(supabase, (data as unknown as PlaceWithExtras[] | null) ?? []),
+  );
 }
 
 export async function countPlaces(groupId: string) {
