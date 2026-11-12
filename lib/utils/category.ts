@@ -30,3 +30,20 @@ export function placeCategoryMeta(place: {
 }): { label: string; emoji: string } {
   return place.category_meta ?? categoryMeta(place.category);
 }
+
+/**
+ * 写真が無いスポットの下地に使う色（色相）。
+ *
+ * 色相をそのままばらけさせると一覧が虹色になるので、
+ * ブランドになじむ8色から、カテゴリ名で選ぶ（同じ名前なら必ず同じ色）。
+ */
+const TINT_HUES = [18, 35, 48, 95, 165, 200, 258, 330];
+
+export function categoryHue(value: string | null): number {
+  if (!value) return TINT_HUES[0];
+  let hash = 0;
+  for (const ch of value) {
+    hash = (hash * 31 + ch.codePointAt(0)!) % 1000;
+  }
+  return TINT_HUES[hash % TINT_HUES.length];
+}

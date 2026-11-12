@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Card';
+import { CategoryArt } from './CategoryArt';
 import { StarRating } from '@/components/ui/StarRating';
 import { placeCategoryMeta } from '@/lib/utils/category';
 import { formatJaDateShort } from '@/lib/utils/date';
@@ -19,17 +20,6 @@ export function placeAverageRating(place: PlaceWithExtras): number | null {
 
 export function placeWantAgain(place: PlaceWithExtras): boolean {
   return (place.place_reviews ?? []).some((r) => r.want_again);
-}
-
-/** 写真が無いスポット用の背景（カテゴリの絵文字を出す） */
-function PhotoPlaceholder({ emoji }: { emoji: string }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-sky-gradient dark:bg-ink-800">
-      <span className="text-3xl" aria-hidden="true">
-        {emoji}
-      </span>
-    </div>
-  );
 }
 
 export function PlaceCard({
@@ -64,7 +54,7 @@ export function PlaceCard({
             loading="lazy"
           />
         ) : (
-          <PhotoPlaceholder emoji={meta.emoji} />
+          <CategoryArt emoji={meta.emoji} category={place.category} />
         )}
         {place.status === 'visited' && (
           <span className="absolute left-1.5 top-1.5 rounded-pill bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
@@ -85,9 +75,7 @@ export function PlaceCard({
         )}
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Badge tone="brand">
-            {meta.emoji} {meta.label}
-          </Badge>
+          <Badge tone="brand">{meta.label}</Badge>
           {place.planned_date && <Badge tone="accent">{formatJaDateShort(place.planned_date)}</Badge>}
           {typeof distanceMeters === 'number' && <Badge tone="neutral">{formatDistance(distanceMeters)}</Badge>}
           {placeWantAgain(place) && <Badge tone="accent">また行きたい</Badge>}

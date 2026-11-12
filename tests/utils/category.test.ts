@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeCategoryInput, placeCategoryMeta } from '@/lib/utils/category';
+import { categoryHue, normalizeCategoryInput, placeCategoryMeta } from '@/lib/utils/category';
 
 describe('normalizeCategoryInput', () => {
   it('前後の空白を落として受け取る', () => {
@@ -42,5 +42,18 @@ describe('placeCategoryMeta', () => {
 
   it('カテゴリ無し（削除された後など）は「その他」になる', () => {
     expect(placeCategoryMeta({ category: null, category_meta: null })).toMatchObject({ label: 'その他' });
+  });
+});
+
+describe('categoryHue', () => {
+  it('同じカテゴリ名なら必ず同じ色になる', () => {
+    expect(categoryHue('ラーメン')).toBe(categoryHue('ラーメン'));
+  });
+
+  it('決めた8色の中から選ばれる', () => {
+    const allowed = [18, 35, 48, 95, 165, 200, 258, 330];
+    for (const name of ['cafe', 'restaurant', 'ラーメン', '温泉', 'キャンプ', null]) {
+      expect(allowed).toContain(categoryHue(name));
+    }
   });
 });

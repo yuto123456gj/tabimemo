@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MapContainer } from '@/components/map/MapContainer';
+import { CategoryArt } from '@/components/places/CategoryArt';
+import { PhotoUpload } from '@/components/places/PhotoUpload';
 import { PlaceActions } from '@/components/places/PlaceActions';
 import { SetLocationCard } from '@/components/places/SetLocationCard';
 import { ReviewForm } from '@/components/places/ReviewForm';
@@ -65,12 +67,11 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ id
             // eslint-disable-next-line @next/next/no-img-element
             <img src={place.photo_url} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-sky-gradient dark:bg-ink-800">
-              <span className="text-5xl" aria-hidden="true">
-                {meta.emoji}
-              </span>
-            </div>
+            <CategoryArt emoji={meta.emoji} category={place.category} size="lg" />
           )}
+          <div className="absolute bottom-2 right-2">
+            <PhotoUpload placeId={place.id} hasPhoto={Boolean(place.photo_url)} compact />
+          </div>
         </div>
         <div className="p-4">
           <div className="flex flex-wrap items-center gap-1.5">

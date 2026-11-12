@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Card';
 import { StarRating } from '@/components/ui/StarRating';
 import { IconChevronRight, IconPin } from '@/components/ui/Icons';
 import { placeAverageRating } from '@/components/places/PlaceCard';
+import { CategoryArt } from '@/components/places/CategoryArt';
 
 import { formatDistance, haversineDistance } from '@/lib/route/geo';
 import { formatOpeningHours } from '@/lib/utils/hours';
@@ -179,13 +180,13 @@ function SelectedCard({
       href={`/places/${place.id}`}
       className="card flex animate-fade-up items-center gap-3 p-3 transition hover:shadow-lift"
     >
-      <span className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-sky-gradient text-2xl dark:bg-ink-800">
+      <span className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl">
         {place.photo_url ? (
           // 外部ドメインが多岐にわたるため next/image ではなく img を使う
           // eslint-disable-next-line @next/next/no-img-element
           <img src={place.photo_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <span aria-hidden="true">{meta.emoji}</span>
+          <CategoryArt emoji={meta.emoji} category={place.category} size="sm" />
         )}
       </span>
 
@@ -196,9 +197,7 @@ function SelectedCard({
         </span>
         {hours && <span className="mt-0.5 block truncate text-xs text-ink-500 dark:text-ink-400">{hours}</span>}
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
-          <Badge tone="brand">
-            {meta.emoji} {meta.label}
-          </Badge>
+          <Badge tone="brand">{meta.label}</Badge>
           <Badge tone={place.status === 'visited' ? 'accent' : 'neutral'}>
             {place.status === 'visited' ? '✅ 行った！' : '✨ 行きたい'}
           </Badge>
